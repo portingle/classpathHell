@@ -1,0 +1,20 @@
+group 'com.portingle'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'groovy'
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+buildscript {
+    dependencies {
+        classpath group: 'com.portingle', name: 'classpathCollisionChecker', version: '1.0-SNAPSHOT'
+    }
+}
+apply plugin: 'com.portingle.classpathCollisionChecker'
+
+classpathCollisionChecker {
+    includeResource("")
+}
