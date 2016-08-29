@@ -1,4 +1,4 @@
-group 'com.portingle'
+group 'org.portingle'
 version '1.0-SNAPSHOT'
 
 apply plugin: 'groovy'

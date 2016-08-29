@@ -1,5 +1,6 @@
-package classpathcollisionchecker
+package classpathHell
 
+import groovy.transform.PackageScope
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.artifacts.Configuration
@@ -13,10 +14,15 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipException
 import java.util.zip.ZipFile
 
-class ClasspathCollisionCheckerTask extends DefaultTask {
+@PackageScope
+class ClasspathHellTask extends DefaultTask {
+
+    def info(String s) {
+        logger.info("classpathHell: " + s)
+    }
 
     static Collection<String> getResourcesFromJarFile(final File file, final Pattern pattern) {
-        //println("resources from "+  file)
+
         final ArrayList<String> retval = new ArrayList<String>();
 
         ZipFile zf;
@@ -46,35 +52,12 @@ class ClasspathCollisionCheckerTask extends DefaultTask {
         return retval;
     }
 
-    static boolean includeResource(String f) {
-        //println("checking inclusion"+ f)
-        def exclusions = ['^rootdoc.txt$',
-                          '^about.html$',
-                          '^NOTICE$',
-                          '^LICENSE$',
-                          '^LICENSE.*.txt$',
-                          '^META-INF/.*',
-                          '.*/$',
-                          '.*com/sun/.*',
-                          '.*javax/annotation/.*'
-        ]
-
-        boolean inc = true
-        exclusions.each { ex ->
-            if (f.matches(ex))
-                inc = false
-        }
-
-        //println("result " + inc)
-        return inc
-    }
-
     static String gav(ResolvedDependency d) {
         def f = d.module.id
         f.group + ":" + f.name + ":" + f.version
     }
 
-    Set<String> findDep(List pathAccumulator, ResolvedDependency dep, ResolvedArtifact source) {
+    static Set<String> findDep(List pathAccumulator, ResolvedDependency dep, ResolvedArtifact source) {
         if (dep.module.id == source.moduleVersion.id) {
             List<String> path = pathAccumulator.reverse().collect { it.toString() }
 
@@ -88,7 +71,7 @@ class ClasspathCollisionCheckerTask extends DefaultTask {
     }
 
 
-    Set<String> findDepC(List pathAccumulator, Set<ResolvedDependency> children, ResolvedArtifact source) {
+    static Set<String> findDepC(List pathAccumulator, Set<ResolvedDependency> children, ResolvedArtifact source) {
         def found = [] as Set
 
         children.each { child ->
@@ -100,23 +83,24 @@ class ClasspathCollisionCheckerTask extends DefaultTask {
         found
     }
 
-    Set<String> findRoute(Configuration conf, ResolvedArtifact source) {
+    static Set<String> findRoute(Configuration conf, ResolvedArtifact source) {
         Set<ResolvedDependency> deps = conf.getResolvedConfiguration().firstLevelModuleDependencies
         findDepC([], deps, source)
     }
 
     static Set<ResolvedArtifact> suppressPermittedCombinations(Set<ResolvedArtifact> dupes) {
+        // unimplemented !!!
         return dupes
     }
 
-    List<String> getResources(File f) {
+    static List<String> getResources(File f) {
         ArrayList<String> files = new ArrayList<String>()
         if (f.isFile()) {
             Collection<String> r = getResourcesFromJarFile(f, Pattern.compile(".*"))
             files.addAll(r)
         } else {
             f.listFiles().each { File dir ->
-                Collection<String> r = this.getResources(dir)
+                Collection<String> r = getResources(dir)
 
                 files.addAll(r)
             }
@@ -125,25 +109,32 @@ class ClasspathCollisionCheckerTask extends DefaultTask {
     }
 
     @TaskAction
-    void classpathCollisionCheck() {
-        ClasspathCollisionCheckerPluginExtension ext = project.classpathCollisionChecker
+    void action() {
+        ClasspathHellPluginExtension ext = project.classpathHell
 
         boolean hadDupes = false
 
         ConfigurationContainer configurations = this.project.configurations
 
         configurations.iterator().each { conf ->
-            System.out.println("checking " + conf.toString())
-            System.out.flush()
+            info("checking " + conf.toString())
 
             Map<String, Set<ResolvedArtifact>> counts = new HashMap()
             conf.getResolvedConfiguration().getResolvedArtifacts().each {
                 ResolvedArtifact at ->
-                    System.out.println("checking " + at)
 
-                    if (ext.includeArtefact(at)) {
+                    if (ext.includeArtifact.call(at)) {
+                        info("including artifact <" + at.moduleVersion.id + ">")
+
                         File file = at.file
-                        Collection<String> r = this.getResources(file).findAll { res -> includeResource(res) }
+                        Collection<String> r = getResources(file).findAll {
+                            String res ->
+                                Boolean inc = ext.includeResource.call(res)
+
+                                if (inc) info(" including resource <" + res + ">")
+                                else info(" excluding resource <" + res + ">")
+                                inc
+                        }
 
                         r.each { res ->
                             Set<ResolvedArtifact> sources = counts.get(res)
@@ -153,7 +144,9 @@ class ClasspathCollisionCheckerTask extends DefaultTask {
                             }
                             sources.add(at)
                         }
-                    }
+                    } else
+                        info("excluding artifact <" + at.moduleVersion.id + ">")
+
             }
 
             counts.entrySet().each { e ->
