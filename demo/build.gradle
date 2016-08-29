@@ -15,11 +15,11 @@ buildscript {
     }
 
     dependencies {
-        classpath "org.portingle:classpathHell:1.0-SNAPSHOT"
+        classpath "com.portingle:classpathHell:1.0-SNAPSHOT"
     }
 }
 
-apply plugin: 'org.portingle.classpathHell'
+apply plugin: 'com.portingle.classpathHell'
 apply plugin: 'java'
 
 classpathHell {
