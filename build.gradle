@@ -14,6 +14,7 @@ dependencies {
     testCompile gradleTestKit()
 }
 
+
 // see http://jdpgrailsdev.github.io/blog/2016/03/29/gradle_test_kit.html
 task createPluginClasspath {
     def outputDir = file("${buildDir}/resources/test")
