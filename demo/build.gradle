@@ -1,5 +1,6 @@
 
-// expect failure from this build script
+// expect failure from this build script because hamcrest-all contains hamcrest-core
+// so there are lots of dupe'd resources
 
 repositories {
     mavenLocal()
