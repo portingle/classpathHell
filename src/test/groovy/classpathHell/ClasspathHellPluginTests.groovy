@@ -35,7 +35,7 @@ class ClasspathHellPluginTests {
     @Test
     public void testCanApply() {
         Project project = ProjectBuilder.builder().build()
-        project.pluginManager.apply 'portingle.classpathHell'
+        project.pluginManager.apply 'org.portingle.classpathHell'
 
         assertTrue(project.tasks.checkClasspath instanceof ClasspathHellTask)
 
@@ -47,7 +47,7 @@ class ClasspathHellPluginTests {
     public void testScansConfigurations() {
         buildFile << '''
             plugins {
-                id 'portingle.classpathHell'
+                id 'org.portingle.classpathHell'
             }
 
             configurations {
@@ -71,7 +71,7 @@ class ClasspathHellPluginTests {
     public void testReportsDupes() {
         buildFile << '''
             plugins {
-                id 'portingle.classpathHell'
+                id 'org.portingle.classpathHell'
             }
             apply plugin: 'java'
 
@@ -100,7 +100,7 @@ class ClasspathHellPluginTests {
     public void testOverrideExtensions() {
         buildFile << '''
             plugins {
-                id 'portingle.classpathHell'
+                id 'org.portingle.classpathHell'
             }
             apply plugin: 'java'
 
