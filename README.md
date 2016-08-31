@@ -10,18 +10,17 @@ Gradle plugin that breaks the build if there are classpath collisions
 // so there are lots of dupe'd resources
 
 repositories {
-    mavenLocal()
     mavenCentral()
 }
 
 buildscript {
 
     repositories {
-        mavenLocal()
         mavenCentral()
     }
 
     dependencies {
+        // check maven central for the latest release
         classpath "com.portingle:classpath-hell:1.0"
     }
 }
@@ -29,6 +28,7 @@ buildscript {
 apply plugin: 'com.portingle.classpathHell'
 apply plugin: 'java'
 
+// some optional configuration
 classpathHell {
 
     // Demonstrate replacing the default set of exclusions
@@ -39,11 +39,13 @@ classpathHell {
     ]
 }
 
+// introduce some deliberate duplication
 dependencies {
     compile group: 'org.hamcrest', name: 'hamcrest-all', version: '1.3'
     compile group: 'org.hamcrest', name: 'hamcrest-core', version: '1.3'
 }
 
+// link this plugin into the build cycle
 build.dependsOn(['checkClasspath'])
 
 ```
