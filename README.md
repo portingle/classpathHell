@@ -47,6 +47,10 @@ classpathHell {
             ".*class",
             ".*/",
     ]
+    
+    // Uncomment this line to make the build succeed.
+    // Of course the correct solution is to elimiate the dependency on the hamcrest-all jar
+    //artifactExclusions = [ ".*hamcrest-all.*" ]
 }
 
 // introduce some deliberate duplication
