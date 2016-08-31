@@ -3,7 +3,7 @@ apply plugin: 'maven'
 
 group 'com.portingle'
 archivesBaseName = "classpath-hell"
-version '1.0'
+version '1.1-SNAPSHOT'
 
 repositories {
     mavenCentral()
@@ -15,13 +15,18 @@ dependencies {
     testCompile gradleTestKit()
 }
 
+task javadocJar(type: Jar) {
+    classifier = 'javadoc'
+    from javadoc
+}
+
 task sourcesJar(type: Jar) {
     classifier = 'sources'
     from sourceSets.main.allSource
 }
 
 artifacts {
-    archives sourcesJar
+    archives javadocJar, sourcesJar
 }
 
 apply plugin: 'signing'
@@ -49,47 +54,57 @@ task wrapper(type: Wrapper) {
     gradleVersion = '3.0'
 }
 
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-
-            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-                authentication(userName: sonatypeUsername, password: sonatypePassword)
-            }
-
-            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-                authentication(userName: sonatypeUsername, password: sonatypePassword)
-            }
-
-            pom.project {
-                name 'classpath-hell'
-                packaging 'jar'
-
-                // optionally artifactId can be defined here
-                description 'ClasspathHell Gradle Plugin detects duplicate resources on the classpath'
-                url 'https://github.com/portingle/classpathHell'
-
-                scm {
-                    connection 'scm:git@github.com:portingle/classpathHell.git'
-                    developerConnection 'scm:git@github.com:portingle/classpathHell.git'
-                    url 'scm:git@github.com:portingle/classpathHell.git'
-                }
-
-                licenses {
-                    license {
-                        name 'The MIT Licence (MIT)'
-                        url 'https://opensource.org/licenses/MIT'
-                    }
-                }
-
-                developers {
-                    developer {
-                        id 'Johnlon'
-                        name 'John Lonergan'
-                    }
-                }
-            }
-        }
-    }
-}
+// snapshot location https://oss.sonatype.org/content/repositories/snapshots/com/portingle/classpath-hell/
+// staging https://oss.sonatype.org/service/local/staging/deploy/maven2/com/portingle/classpath-hell/
+//
+// See here about reviewing the staging http://central.sonatype.org/pages/releasing-the-deployment.html
+// you have to look for a staging repo created by nexus when uploadArchives was done for this release.
+// Go here and search for it by group or artifact name .. https://oss.sonatype.org/#stagingRepositories
+//
+// consider using the Gradle Nexus Staging Maven as this avoids need to use the NExus gui to close and release the stage artifact.
+//
+// UNCOMMENT THIS SECTION AND USE ONLY FROM THE COMMAND LINE OTHERWISE TRAVIS ABORTS
+//uploadArchives {
+//    repositories {
+//        mavenDeployer {
+//            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+//
+//            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+//                authentication(userName: sonatypeUsername, password: sonatypePassword)
+//            }
+//
+//            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+//                authentication(userName: sonatypeUsername, password: sonatypePassword)
+//            }
+//
+//            pom.project {
+//                name 'classpath-hell'
+//                packaging 'jar'
+//
+//                // optionally artifactId can be defined here
+//                description 'ClasspathHell Gradle Plugin detects duplicate resources on the classpath'
+//                url 'https://github.com/portingle/classpathHell'
+//
+//                scm {
+//                    connection 'scm:git@github.com:portingle/classpathHell.git'
+//                    developerConnection 'scm:git@github.com:portingle/classpathHell.git'
+//                    url 'scm:git@github.com:portingle/classpathHell.git'
+//                }
+//
+//                licenses {
+//                    license {
+//                        name 'The MIT Licence (MIT)'
+//                        url 'https://opensource.org/licenses/MIT'
+//                    }
+//                }
+//
+//                developers {
+//                    developer {
+//                        id 'Johnlon'
+//                        name 'John Lonergan'
+//                    }
+//                }
+//            }
+//        }
+//    }
+//}
