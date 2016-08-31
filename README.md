@@ -2,9 +2,11 @@
 
 Gradle plugin that breaks the build if there are classpath collisions.
 
-Think your build is stable andf repeatable? Think again.
+Think your build is stable and repeatable? Think again.
 
-It's far too easy to end up with multiple copies of a class or resource on your classpath leading to difficult to trace runtime errors. 
+It's far too easy to end up with multiple copies of a class or resource on your classpath leading to difficult to trace runtime errors that due to classpath ordering instability might not show up until late in your release cycle, or possibly even production. 
+
+Don't let that happen - just use this detector.
 
 An excellent example is that Dropwizard and Codahale metrics have the same fully qualified class names.
 
