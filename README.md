@@ -8,7 +8,7 @@ It's far too easy to end up with multiple copies of a class or resource on your 
 
 Don't let that happen - just use this detector.
 
-An excellent example is that Dropwizard and Codahale metrics have the same fully qualified class names.
+An excellent example is that Dropwizard and Codahale metrics have the same fully qualified class names, but with different interfaces and different implementations.
 
 Other problems include where we have _-all_ jars included in addition to discrete jars (see the example below). In such cases the dependency resolution in Gradle (or maven) won't help.
 
