@@ -16,8 +16,8 @@ What you need to to spot those cases where there are dupes and then eliminate th
 
 ```gradle
 
-// expect failure from this particularbuild script because hamcrest-all contains hamcrest-core
-// so there are lots of dupe'd resources
+// expect a deliberate failure from this build script because hamcrest-all contains hamcrest-core
+// causing lots of dupe'd resources
 
 repositories {
     mavenCentral()
