@@ -1,4 +1,4 @@
-# classpathHell
+# classpathHell - Classpath Mayhem Detector
 
 Gradle plugin that breaks the build if there are classpath collisions.
 
