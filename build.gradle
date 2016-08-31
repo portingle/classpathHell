@@ -1,8 +1,9 @@
-group 'com.portingle'
-version '1.0-SNAPSHOT'
-
 apply plugin: 'groovy'
 apply plugin: 'maven'
+
+group 'com.portingle'
+archivesBaseName = "classpath-hell"
+version '1.0'
 
 repositories {
     mavenCentral()
@@ -14,6 +15,20 @@ dependencies {
     testCompile gradleTestKit()
 }
 
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives sourcesJar
+}
+
+apply plugin: 'signing'
+
+signing {
+    sign configurations.archives
+}
 
 // see http://jdpgrailsdev.github.io/blog/2016/03/29/gradle_test_kit.html
 task createPluginClasspath {
@@ -32,4 +47,49 @@ test.dependsOn(['createPluginClasspath'])
 
 task wrapper(type: Wrapper) {
     gradleVersion = '3.0'
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: sonatypeUsername, password: sonatypePassword)
+            }
+
+            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+                authentication(userName: sonatypeUsername, password: sonatypePassword)
+            }
+
+            pom.project {
+                name 'classpath-hell'
+                packaging 'jar'
+
+                // optionally artifactId can be defined here
+                description 'ClasspathHell Gradle Plugin detects duplicate resources on the classpath'
+                url 'https://github.com/portingle/classpathHell'
+
+                scm {
+                    connection 'scm:git@github.com:portingle/classpathHell.git'
+                    developerConnection 'scm:git@github.com:portingle/classpathHell.git'
+                    url 'scm:git@github.com:portingle/classpathHell.git'
+                }
+
+                licenses {
+                    license {
+                        name 'The MIT Licence (MIT)'
+                        url 'https://opensource.org/licenses/MIT'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id 'Johnlon'
+                        name 'John Lonergan'
+                    }
+                }
+            }
+        }
+    }
 }
