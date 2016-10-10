@@ -48,18 +48,28 @@ class ClasspathHellPluginExtension {
         return inc
     }
 
-    /* override to provide an alternative list of resources to exclude from the check */
-    List<String> resourceExclusions = [
-        "^rootdoc.txt\$",
-        "^about.html\$",
-        "^NOTICE\$",
-        "^LICENSE\$",
-        "^LICENSE.*.txt\$",
-        "^META-INF/.*",
-        ".*/\$",
-        ".*com/sun/.*",
-        ".*javax/annotation/.*"
-    ]
+    /** Override or modify to provide an alternative list of resources to exclude from the check.
+     *  Examples:
+     *  <pre>
+     *      classpathHell {
+     *          resourceExclusions = defaultResourceExclusions()
+     *      }
+     *  </pre>
+     * */
+    List<String> resourceExclusions = defaultResourceExclusions()
+
+    /* common defaults */
+    List<String> defaultResourceExclusions() { [
+            "^rootdoc.txt\$",
+            "^about.html\$",
+            "^NOTICE\$",
+            "^LICENSE\$",
+            "^LICENSE.*.txt\$",
+            "^META-INF/.*",
+            ".*/\$",
+            ".*com/sun/.*",
+            ".*javax/annotation/.*"
+    ] }
 
     /*
     override to provide an alternative inclusion strategy to the default.
