@@ -58,7 +58,7 @@ class ClasspathHellPluginTests {
 
         GradleRunner runner = GradleRunner.create()
                 .withProjectDir(testProjectDir.getRoot())
-                .withArguments('-i', 'checkClasspath', '--stacktrace', '--refresh-dependencies')
+                .withArguments('--debug', 'checkClasspath', '--stacktrace', '--refresh-dependencies')
                 .withPluginClasspath(pluginClasspath)
         BuildResult result = runner.build()
 
@@ -132,7 +132,7 @@ class ClasspathHellPluginTests {
 
         GradleRunner runner = GradleRunner.create()
                 .withProjectDir(testProjectDir.getRoot())
-                .withArguments('-i', 'checkClasspath')
+                .withArguments('--debug', 'checkClasspath')
                 .withPluginClasspath(pluginClasspath)
 
         BuildResult result = runner.build()

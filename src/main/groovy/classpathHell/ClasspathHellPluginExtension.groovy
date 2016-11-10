@@ -4,12 +4,11 @@ import org.gradle.api.artifacts.ResolvedArtifact
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-
 class ClasspathHellPluginExtension {
 
     static Logger logger = LoggerFactory.getLogger('classpathHell')
-    static def info(String s) {
-        logger.info("classpathHell: " + s)
+    static def log(String s) {
+        logger.debug("classpathHell: " + s)
     }
 
     /* utility */
@@ -40,7 +39,7 @@ class ClasspathHellPluginExtension {
 
         boolean inc = true
         excludedPatterns.each { ex ->
-            info("comparing resource " + f + " to " + ex)
+            log("comparing resource " + f + " to " + ex)
             if (f.matches(ex))
                 inc = false
         }
@@ -48,18 +47,11 @@ class ClasspathHellPluginExtension {
         return inc
     }
 
-    /** Override or modify to provide an alternative list of resources to exclude from the check.
-     *  Examples:
-     *  <pre>
-     *      classpathHell {
-     *          resourceExclusions = defaultResourceExclusions()
-     *      }
-     *  </pre>
-     * */
-    List<String> resourceExclusions = defaultResourceExclusions()
 
-    /* common defaults */
-    List<String> defaultResourceExclusions() { [
+    /* A convenience constant defining a set of common defaults that are not very interesting.
+    */
+    List<String> CommonResourceExclusions() {
+        return [
             "^rootdoc.txt\$",
             "^about.html\$",
             "^NOTICE\$",
@@ -70,6 +62,10 @@ class ClasspathHellPluginExtension {
             ".*com/sun/.*",
             ".*javax/annotation/.*"
     ] }
+
+    /** Optionall override or modify to provide an alternative list of resources to exclude from the check.
+     */
+    List<String> resourceExclusions = []
 
     /*
     override to provide an alternative inclusion strategy to the default.

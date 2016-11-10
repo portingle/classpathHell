@@ -17,8 +17,8 @@ import java.util.zip.ZipFile
 @PackageScope
 class ClasspathHellTask extends DefaultTask {
 
-    def info(String s) {
-        logger.info("classpathHell: " + s)
+    def log(String s) {
+        logger.debug("classpathHell: " + s)
     }
 
     static Collection<String> getResourcesFromJarFile(final File file, final Pattern pattern) {
@@ -117,22 +117,22 @@ class ClasspathHellTask extends DefaultTask {
         ConfigurationContainer configurations = this.project.configurations
 
         configurations.iterator().each { conf ->
-            info("checking " + conf.toString())
+            log("checking " + conf.toString())
 
             Map<String, Set<ResolvedArtifact>> counts = new HashMap()
             conf.getResolvedConfiguration().getResolvedArtifacts().each {
                 ResolvedArtifact at ->
 
                     if (ext.includeArtifact.call(at)) {
-                        info("including artifact <" + at.moduleVersion.id + ">")
+                        log("including artifact <" + at.moduleVersion.id + ">")
 
                         File file = at.file
                         Collection<String> r = getResources(file).findAll {
                             String res ->
                                 Boolean inc = ext.includeResource.call(res)
 
-                                if (inc) info(" including resource <" + res + ">")
-                                else info(" excluding resource <" + res + ">")
+                                if (inc) log(" including resource <" + res + ">")
+                                else log(" excluding resource <" + res + ">")
                                 inc
                         }
 
@@ -145,7 +145,7 @@ class ClasspathHellTask extends DefaultTask {
                             sources.add(at)
                         }
                     } else
-                        info("excluding artifact <" + at.moduleVersion.id + ">")
+                        log("excluding artifact <" + at.moduleVersion.id + ">")
 
             }
 
