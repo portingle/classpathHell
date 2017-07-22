@@ -62,7 +62,7 @@ class ClasspathHellTask extends DefaultTask {
             List<String> path = pathAccumulator.reverse().collect { it.toString() }
 
             def s = [] as Set
-            s.add path.join(" <- " )
+            s.add path.join(" <- ")
             return s
         } else {
             Set<ResolvedDependency> children = dep.children
@@ -114,9 +114,9 @@ class ClasspathHellTask extends DefaultTask {
 
         boolean hadDupes = false
 
-        ConfigurationContainer configurations = this.project.configurations
-
-        configurations.iterator().each { conf ->
+        this.project.getConfigurations().findAll {
+            canBeResolved(it)
+        }.each { conf ->
             log("checking " + conf.toString())
 
             Map<String, Set<ResolvedArtifact>> counts = new HashMap()
