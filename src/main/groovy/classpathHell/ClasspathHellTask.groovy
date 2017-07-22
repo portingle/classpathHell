@@ -62,7 +62,7 @@ class ClasspathHellTask extends DefaultTask {
             List<String> path = pathAccumulator.reverse().collect { it.toString() }
 
             def s = [] as Set
-            s.add path.join(" <- " )
+            s.add path.join(" <- ")
             return s
         } else {
             Set<ResolvedDependency> children = dep.children
@@ -108,15 +108,22 @@ class ClasspathHellTask extends DefaultTask {
         return files
     }
 
+    static boolean canBeResolved(configuration) {
+        // Configuration.isCanBeResolved() has been introduced with Gradle 3.3,
+        // thus we need to check for the method's existence first
+        configuration.metaClass.respondsTo(configuration, "isCanBeResolved") ?
+                configuration.isCanBeResolved() : true
+    }
+
     @TaskAction
     void action() {
         ClasspathHellPluginExtension ext = project.classpathHell
 
         boolean hadDupes = false
 
-        ConfigurationContainer configurations = this.project.configurations
-
-        configurations.iterator().each { conf ->
+        this.project.getConfigurations().findAll {
+            canBeResolved(it)
+        }.each { conf ->
             log("checking " + conf.toString())
 
             Map<String, Set<ResolvedArtifact>> counts = new HashMap()

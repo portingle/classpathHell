@@ -45,7 +45,7 @@ task createPluginClasspath {
 test.dependsOn(['createPluginClasspath'])
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '3.0'
+    gradleVersion = '4.0'
 }
 
 // UNCOMMENT THIS SECTION AND USE ONLY FROM THE COMMAND LINE OTHERWISE TRAVIS ABORTS
