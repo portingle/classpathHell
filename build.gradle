@@ -3,7 +3,7 @@ apply plugin: 'maven'
 
 group 'com.portingle'
 archivesBaseName = "classpath-hell"
-version '1.1-SNAPSHOT'
+version '1.2'
 
 repositories {
     mavenCentral()
