@@ -39,7 +39,7 @@ buildscript {
 
     dependencies {
         // check maven central for the latest release
-        classpath "com.portingle:classpath-hell:1.1"
+        classpath "com.portingle:classpath-hell:1.2"
     }
 }
 
@@ -99,7 +99,7 @@ buildscript {
 
     dependencies {
         // check maven central for the latest release
-        classpath "com.portingle:classpath-hell:1.1"
+        classpath "com.portingle:classpath-hell:1.2"
     }
 }
 
@@ -175,7 +175,7 @@ buildscript {
 
     dependencies {
         // check maven central for the latest release
-        classpath "com.portingle:classpath-hell:1.1"
+        classpath "com.portingle:classpath-hell:1.2"
     }
 }
 
