@@ -214,3 +214,9 @@ But don't forget to wire this plugin into your build so it runs automatically.
 // link this plugin into the build cycle
 build.dependsOn(['checkClasspath'])
 ```
+
+# Troubleshooting
+
+## Error "Resolving configuration 'apiElements' directly is not allowed"
+
+You are probably running Gradle 4.x with an old version of classpathHell - upgrade to 1.2 or later.
