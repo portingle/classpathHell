@@ -18,6 +18,11 @@ In such cases the dependency resolution in Gradle (or maven) won't help.
 What you need to to spot those cases where there are dupes and then eliminate the dupes or if you deem it safe then suppress the specific violation. 
 This plugin provides that functionality.
 
+I discovered after creating classpathHell that there are two similar plugins out there:
+- https://github.com/nebula-plugins/gradle-lint-plugin/wiki/Duplicate-Classes-Rule
+- https://plugins.gradle.org/plugin/net.idlestate.gradle-duplicate-classes-check
+I haven;t looked at these yet and it is conceivable that these will be a better fit for you, but classpathHell seems to be more configurable, allowing suppressions etc.
+
 ## Getting started
 
 ### Short example
