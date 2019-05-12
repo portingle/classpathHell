@@ -167,6 +167,17 @@ build.dependsOn(['checkClasspath'])
 
 ```
 
+
+### Extra logging
+
+Set the trace property to true
+
+```groovy
+classpathHell {
+   trace= true
+}
+```
+
 ### Excluding artefacts from the report
 
 As well as suppressing reports about certain resources being duplicated we can suppress reports relating to entire artefacts; 
