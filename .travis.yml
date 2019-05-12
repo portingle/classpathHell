@@ -8,7 +8,6 @@ cache:
     - $HOME/.gradle/wrapper/
 
 jdk:
-  - oraclejdk7
   - oraclejdk8
   
 dist: precise

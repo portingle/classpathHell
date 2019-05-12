@@ -12,6 +12,7 @@ import org.junit.rules.TemporaryFolder
 import static org.gradle.testkit.runner.TaskOutcome.FAILED
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertTrue
 
 class ClasspathHellPluginTests {
@@ -28,7 +29,8 @@ class ClasspathHellPluginTests {
         buildFile = testProjectDir.newFile('build.gradle')
         propertiesFile = testProjectDir.newFile('gradle.properties')
         URL classpathResource = getClass().classLoader.getResource('plugin-classpath.txt')
-        if (classpathResource==null) throw RuntimeException('Cannot find plugin-classpath.txt - did the gradle build correctly create it?')
+        if (classpathResource==null)
+            throw new RuntimeException('Cannot find plugin-classpath.txt - did the gradle build correctly create it?')
         pluginClasspath = classpathResource.readLines().collect { new File(it) }
     }
 
@@ -63,6 +65,39 @@ class ClasspathHellPluginTests {
         BuildResult result = runner.build()
 
         assertTrue(result.getOutput().contains("checking configuration ':config1'"));
+        assertTrue(result.getOutput().contains("checking configuration ':config2'"));
+        assertEquals(result.task(":checkClasspath").getOutcome(), SUCCESS);
+    }
+
+    @Test
+    public void testScansSelectiveConfigurations() {
+        buildFile << '''
+            plugins {
+                id 'com.portingle.classpathHell'
+            }
+
+            configurations {
+                 config1
+                 config2
+            }
+
+            classpathHell {
+            
+                artifactExclusions = [ ".*hamcrest-all.*" ]
+
+                configurationsToScan = [ configurations.config2 ]
+                
+            }
+
+            '''
+
+        GradleRunner runner = GradleRunner.create()
+                .withProjectDir(testProjectDir.getRoot())
+                .withArguments('--debug', 'checkClasspath', '--stacktrace', '--refresh-dependencies')
+                .withPluginClasspath(pluginClasspath)
+        BuildResult result = runner.build()
+
+        assertFalse(result.getOutput().contains("checking configuration ':config1'"));
         assertTrue(result.getOutput().contains("checking configuration ':config2'"));
         assertEquals(result.task(":checkClasspath").getOutcome(), SUCCESS);
     }

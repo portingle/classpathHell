@@ -1,5 +1,6 @@
 package classpathHell
 
+import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ResolvedArtifact
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -7,8 +8,8 @@ import org.slf4j.LoggerFactory
 class ClasspathHellPluginExtension {
 
     static Logger logger = LoggerFactory.getLogger('classpathHell')
-    static def log(String s) {
-        logger.debug("classpathHell: " + s)
+    static def trace(String s) {
+        logger.trace("classpathHell: " + s)
     }
 
     /* utility */
@@ -26,6 +27,9 @@ class ClasspathHellPluginExtension {
     */
     List<String> artifactExclusions = []
 
+    /* optional list of configurations to limit the scan to */
+    List<Configuration> configurationsToScan = []
+
     /*
     override to provide an alternative inclusion strategy to the default.
      */
@@ -39,7 +43,7 @@ class ClasspathHellPluginExtension {
 
         boolean inc = true
         excludedPatterns.each { ex ->
-            log("comparing resource " + f + " to " + ex)
+            trace("comparing resource " + f + " to " + ex)
             if (f.matches(ex))
                 inc = false
         }
@@ -72,5 +76,16 @@ class ClasspathHellPluginExtension {
      */
     def Closure<Boolean> includeResource = { String f ->
         excludeMatches(resourceExclusions, f)
+    }
+
+    @Override
+    public java.lang.String toString() {
+        return "ClasspathHellPluginExtension{" +
+                "artifactExclusions=" + artifactExclusions +
+                ", configurationsToScan=" + configurationsToScan +
+                ", includeArtifact=" + includeArtifact +
+                ", resourceExclusions=" + resourceExclusions +
+                ", includeResource=" + includeResource +
+                '}';
     }
 }

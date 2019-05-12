@@ -121,7 +121,12 @@ class ClasspathHellTask extends DefaultTask {
 
         boolean hadDupes = false
 
-        this.project.getConfigurations().findAll {
+        def configurations = ext.configurationsToScan
+        if (!configurations) {
+            configurations = this.project.getConfigurations()
+        }
+
+        configurations.findAll {
             canBeResolved(it)
         }.each { conf ->
             log("checking " + conf.toString())

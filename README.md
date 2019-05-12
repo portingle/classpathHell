@@ -86,6 +86,19 @@ classpathHell {
 
 However, if you wish to have more control over the exclusions then take a look at the next section.  
 
+### Restricting the gradle configuration scan
+
+Optionally specify "configurationsToScan" to restrict the scanning to defined configurations.
+By default all configurations are scanned.
+
+```groovy
+classpathHell {
+
+    configurationsToScan = [ configurations.testRuntime, configurations.implementation  ]
+}
+
+```
+
 ### Configuring resource suppressions
 
 The previous example will produce a report with many duplicates that have not been suppressed by default.
@@ -113,7 +126,7 @@ buildscript {
 apply plugin: 'com.portingle.classpathHell'
 apply plugin: 'java'
 
-// some optional configuration
+// some demo configuration
 classpathHell {
 
     // use the convenience value ..
@@ -126,7 +139,12 @@ classpathHell {
             "somePath/",
             ".*class"
     ]
-    
+
+    /* optionally specify "configurationsToScan" to restrict the scanning to defined configurations.
+     * by default all configurations are scanned.
+     */
+    configurationsToScan = [ configurations.testRuntime, configurations.implementation  ]
+
     /* Since `resourceExclusions` is a List we can append to it.
      */
     resourceExclusions.addAll([
