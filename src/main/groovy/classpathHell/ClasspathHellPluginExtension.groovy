@@ -5,7 +5,7 @@ import org.gradle.api.artifacts.ResolvedArtifact
 
 class ClasspathHellPluginExtension {
 
-    boolean trace = false
+    Boolean trace = false
 
     /* utility */
     static boolean excludeArtifactPaths(List<String> excludedPatterns, ResolvedArtifact f) {

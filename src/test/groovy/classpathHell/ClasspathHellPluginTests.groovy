@@ -146,6 +146,7 @@ class ClasspathHellPluginTests {
             }
 
             classpathHell {
+                trace = true
 
                 artifactExclusions = [ ".*hamcrest-all.*" ]
 

@@ -4,7 +4,6 @@ import groovy.transform.PackageScope
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.artifacts.Configuration
-import org.gradle.api.artifacts.ConfigurationContainer
 import org.gradle.api.artifacts.ResolvedArtifact
 import org.gradle.api.artifacts.ResolvedDependency
 import org.gradle.api.tasks.TaskAction
@@ -17,8 +16,8 @@ import java.util.zip.ZipFile
 @PackageScope
 class ClasspathHellTask extends DefaultTask {
 
-    def log(String s) {
-        logger.debug("classpathHell: " + s)
+    def log(boolean trace, String s) {
+        if (trace) logger.debug("classpathHell: " + s)
     }
 
     static Collection<String> getResourcesFromJarFile(final File file, final Pattern pattern) {
@@ -136,15 +135,15 @@ class ClasspathHellTask extends DefaultTask {
                 ResolvedArtifact at ->
 
                     if (ext.includeArtifact.call(at)) {
-                        log("including artifact <" + at.moduleVersion.id + ">")
+                        log(ext.trace,"including artifact <" + at.moduleVersion.id + ">")
 
                         File file = at.file
                         Collection<String> r = getResources(file).findAll {
                             String res ->
                                 Boolean inc = ext.includeResource.call(res)
 
-                                if (inc) log(" including resource <" + res + ">")
-                                else log(" excluding resource <" + res + ">")
+                                if (inc) log(ext.trace, " including resource <" + res + ">")
+                                else log(ext.trace, " excluding resource <" + res + ">")
                                 inc
                         }
 
@@ -157,7 +156,7 @@ class ClasspathHellTask extends DefaultTask {
                             sources.add(at)
                         }
                     } else
-                        log("excluding artifact <" + at.moduleVersion.id + ">")
+                        log(ext.trace, "excluding artifact <" + at.moduleVersion.id + ">")
 
             }
 
