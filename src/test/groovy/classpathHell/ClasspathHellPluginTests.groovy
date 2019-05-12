@@ -117,6 +117,7 @@ class ClasspathHellPluginTests {
                 compile group: 'org.hamcrest', name: 'hamcrest-all', version: '1.3'
                 compile group: 'org.hamcrest', name: 'hamcrest-core', version: '1.3'
             }
+   
             '''
 
         GradleRunner runner = GradleRunner.create()
@@ -126,7 +127,8 @@ class ClasspathHellPluginTests {
 
         BuildResult result = runner.buildAndFail()
 
-        assertTrue(result.getOutput().contains('classpath: compile contains duplicate resource: org/hamcrest/core/CombinableMatcher$CombinableBothMatcher.class'));
+        def output = result.getOutput()
+        assertTrue(output.contains('classpath: compile contains duplicate resource: org/hamcrest/core/CombinableMatcher$CombinableBothMatcher.class'));
         assertEquals(result.task(":checkClasspath").getOutcome(), FAILED);
 
     }

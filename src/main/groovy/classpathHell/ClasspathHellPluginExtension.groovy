@@ -2,15 +2,10 @@ package classpathHell
 
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ResolvedArtifact
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 class ClasspathHellPluginExtension {
 
-    static Logger logger = LoggerFactory.getLogger('classpathHell')
-    static def trace(String s) {
-        logger.trace("classpathHell: " + s)
-    }
+    boolean trace = false
 
     /* utility */
     static boolean excludeArtifactPaths(List<String> excludedPatterns, ResolvedArtifact f) {
@@ -43,7 +38,6 @@ class ClasspathHellPluginExtension {
 
         boolean inc = true
         excludedPatterns.each { ex ->
-            trace("comparing resource " + f + " to " + ex)
             if (f.matches(ex))
                 inc = false
         }

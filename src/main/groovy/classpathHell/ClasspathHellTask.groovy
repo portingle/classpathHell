@@ -129,7 +129,7 @@ class ClasspathHellTask extends DefaultTask {
         configurations.findAll {
             canBeResolved(it)
         }.each { conf ->
-            log("checking " + conf.toString())
+            logger.debug("classpathHell: checking " + conf.toString())
 
             Map<String, Set<ResolvedArtifact>> counts = new HashMap()
             conf.getResolvedConfiguration().getResolvedArtifacts().each {
