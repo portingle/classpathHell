@@ -3,7 +3,7 @@
 - 1.3
 
   - added configurationsToScan
-  - moved a lot of debug logging to trace level
+  - suppressed a lot of debug logging using a trace flag
 
 - 1.2
 
