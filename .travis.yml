@@ -10,6 +10,6 @@ cache:
 jdk:
   - oraclejdk8
   
-dist: xenial
+dist: precise
 
 install: true
