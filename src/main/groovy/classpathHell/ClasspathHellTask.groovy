@@ -136,7 +136,7 @@ class ClasspathHellTask extends DefaultTask {
 
         List<Configuration> configurations = ext.configurationsToScan
         if (!configurations) {
-            configurations = this.project.getConfigurations()
+            configurations = this.project.getConfigurations().toList()
         }
 
         configurations.findAll {

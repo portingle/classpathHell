@@ -118,4 +118,6 @@ if (release) {
             }
         }
     }
+} else {
+    println("release is disabled - change the 'release' flag in build.gradle if required")
 }
