@@ -53,21 +53,12 @@ task wrapper(type: Wrapper) {
     gradleVersion = '4.0'
 }
 
-// ENABLE THIS SECTION AND USE ONLY FROM THE COMMAND LINE OTHERWISE TRAVIS ABORTS
-
-// snapshot location https://oss.sonatype.org/content/repositories/snapshots/com/portingle/classpath-hell/
-// staging https://oss.sonatype.org/service/local/staging/deploy/maven2/com/portingle/classpath-hell/
-//
-// See here about reviewing the staging http://central.sonatype.org/pages/releasing-the-deployment.html
-// you have to look for a staging repo created by nexus when uploadArchives was done for this release.
-// Go here and search for it by group or artifact name .. https://oss.sonatype.org/#stagingRepositories
-//
+// TODO ....
 // consider using the Gradle Nexus Staging Maven as this avoids need to use the NExus gui to close and release the stage artifact.
-//
+// if the sonatypeUsername is provided by the gradle properties then a release is enabled
 
-def release=false
+if (project.properties.containsKey("sonatypeUsername")) {
 
-if (release) {
     apply plugin: 'signing'
 
     signing {
