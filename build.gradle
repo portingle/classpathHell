@@ -134,3 +134,8 @@ if (project.properties.containsKey("sonatypeUsername")) {
 } else {
     println("release is disabled - change the 'release' flag in build.gradle if required")
 }
+
+
+wrapper {
+    distributionUrl = "https://services.gradle.org/distributions/gradle-4.0-bin.zip"
+}
