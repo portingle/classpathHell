@@ -1,5 +1,9 @@
 # RELEASE NOTES
 
+- 1.5
+
+  - like 1.4 but using a different hashed
+  
 - 1.4
 
   - allow convenient suppression of 'benign' exact matches where there are dupes but they have the same impl
