@@ -27,10 +27,11 @@ I haven't looked at these yet and it is conceivable that these will be a better 
 
 ## Getting started
 
-### Short example
+### Short demo
 
-In this example we will include two conflicting jars from Hamcrest; the core jar and the uber jar. 
-Given the uber jar contains the core classes this combination will report many dupes.
+In this example we will deliberately include two conflicting jars from Hamcrest; the core jar and the "-all" jar. 
+Given the 'all' jar also contains all the core classes this combination will introduce many duplicate resources to the classpath.
+The example below if run will demonstrate the reporting.
 
 ```groovy
 
@@ -46,7 +47,7 @@ buildscript {
 
     dependencies {
         // check maven central for the latest release
-        classpath "com.portingle:classpath-hell:1.2"
+        classpath "com.portingle:classpath-hell:1.4"
     }
 }
 
@@ -63,10 +64,33 @@ dependencies {
 build.dependsOn(['checkClasspath'])
 ```
 
-### Resource supressions 
+### Restricting the gradle configuration scan
 
-By default the plugin reports all dupes that it finds, however, the plugin allows one configure a property `resourceExclusions`
-to specify a list of regular expressions matching resources to exclude from the check.
+Optionally specify "configurationsToScan" to restrict the scanning to defined configurations.
+By default all configurations are scanned.
+
+```groovy
+classpathHell {
+    configurationsToScan = [ configurations.testRuntime, configurations.implementation  ]
+}
+
+```
+
+### Suppressing benign duplication 
+
+By default the plugin reports all dupes that it finds, however, the plugin allows one to suppress dupes
+where the duplicate resource has exacly the same bytes in each case.
+
+```groovy
+classpathHell {
+    suppressExactDupes = true
+}
+```
+
+### Resource exclusion
+
+By default the plugin reports all dupes that it finds, however, the plugin allows one specify a list of resources to exclude from the check.
+This is done by configuring the property `resourceExclusions` with a list of regular expressions matching the resource paths to suppress. 
 
 ```groovy
 classpathHell { 
@@ -74,7 +98,7 @@ classpathHell {
 }
 ```
 
-As a convenience the plugin provides a constant `CommonResourceExclusions()` that can be used to suppress 
+NOTE: As a convenience the plugin also provides a constant `CommonResourceExclusions()` that can be used to suppress 
 a set of common dupes that aren't very interesting, for example _^about.html\$_.
 
 ```groovy
@@ -86,45 +110,11 @@ classpathHell {
 
 However, if you wish to have more control over the exclusions then take a look at the next section.  
 
-### Restricting the gradle configuration scan
-
-Optionally specify "configurationsToScan" to restrict the scanning to defined configurations.
-By default all configurations are scanned.
-
-```groovy
-classpathHell {
-
-    configurationsToScan = [ configurations.testRuntime, configurations.implementation  ]
-}
-
-```
-
-### Configuring resource suppressions
-
-The previous example will produce a report with many duplicates that have not been suppressed by default.
+### Further resource exclusion patterns 
 
 We can configure the plugin to exclude further resources from the report. 
 
 ```groovy
-
-repositories {
-    mavenCentral()
-}
-
-buildscript {
-
-    repositories {
-        mavenCentral()
-    }
-
-    dependencies {
-        // check maven central for the latest release
-        classpath "com.portingle:classpath-hell:1.2"
-    }
-}
-
-apply plugin: 'com.portingle.classpathHell'
-apply plugin: 'java'
 
 // some demo configuration
 classpathHell {
@@ -140,11 +130,6 @@ classpathHell {
             ".*class"
     ]
 
-    /* optionally specify "configurationsToScan" to restrict the scanning to defined configurations.
-     * by default all configurations are scanned.
-     */
-    configurationsToScan = [ configurations.testRuntime, configurations.implementation  ]
-
     /* Since `resourceExclusions` is a List we can append to it.
      */
     resourceExclusions.addAll([
@@ -156,15 +141,23 @@ classpathHell {
     resourceExclusions.remove("somePath")
 }
 
-// introduce some deliberate duplication
-dependencies {
-    compile group: 'org.hamcrest', name: 'hamcrest-all', version: '1.3'
-    compile group: 'org.hamcrest', name: 'hamcrest-core', version: '1.3'
+```
+
+### Excluding artifacts from the report
+
+As well as suppressing reports about certain resources being duplicated we can suppress reports relating to entire artifacts; 
+this is achieved be configuring `artifactExclusions`.
+
+Of course, ideally you should resolve the conflicting dependencies however sometimes you need a way out and entirely excluding
+an artifact from the scan may be necessary.
+
+```groovy
+classpathHell {
+    artifactExclusions = [
+        // this is a pattern match on the file system path of the build once the dependency has been downloaded locally
+        ".*hamcrest-core.*"
+    ]
 }
-
-// link this plugin into the build cycle
-build.dependsOn(['checkClasspath'])
-
 ```
 
 
@@ -176,64 +169,6 @@ Set the trace property to true
 classpathHell {
    trace= true
 }
-```
-
-### Excluding artefacts from the report
-
-As well as suppressing reports about certain resources being duplicated we can suppress reports relating to entire artefacts; 
-this is achieved be configuring `artifactExclusions`.
-
-```groovy
-classpathHell {
-    artifactExclusions = [
-        // this is a pattern match on the file system path of the resource once it's been downloaded locally
-        ".*hamcrest-core.*"
-    ]
-}
-```
-
-Of course, ideally you should resolve the conflicting dependencies however sometimes you need a way out.
-
-In this next example we'll see how to exclude the Hamcrest core jar from the report.
-This will cause the report to run cleanly because we'll have suppressed all the dupes.
-
-```groovy
-
-repositories {
-    mavenCentral()
-}
-
-buildscript {
-
-    repositories {
-        mavenCentral()
-    }
-
-    dependencies {
-        // check maven central for the latest release
-        classpath "com.portingle:classpath-hell:1.2"
-    }
-}
-
-apply plugin: 'com.portingle.classpathHell'
-apply plugin: 'java'
-
-classpathHell {
-    artifactExclusions = [
-        // this is a pattern match on the file system path of the resource once it's been downloaded locally
-        ".*hamcrest-core.*"
-    ]
-}
-
-// introduce some deliberate duplication
-dependencies {
-    compile group: 'org.hamcrest', name: 'hamcrest-all', version: '1.3'
-    compile group: 'org.hamcrest', name: 'hamcrest-core', version: '1.3'
-}
-
-// link this plugin into the build cycle
-build.dependsOn(['checkClasspath'])
-
 ```
 
 ## Gradle task

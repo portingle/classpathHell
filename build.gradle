@@ -3,7 +3,7 @@ apply plugin: 'maven'
 
 group 'com.portingle'
 archivesBaseName = "classpath-hell"
-version '1.3'
+version '1.4'
 
 repositories {
     mavenCentral()
@@ -31,14 +31,19 @@ artifacts {
 
 // see http://jdpgrailsdev.github.io/blog/2016/03/29/gradle_test_kit.html
 task createPluginClasspath {
-    def outputDir = file("${buildDir}/resources/test")
+    //def outputDir = file("${buildDir}/resources/test")
+    def buildRes = file("${buildDir}/resources/test/plugin-classpath.txt")
+    def outRes = file("${buildDir.getParent()}/out/test/resources/plugin-classpath.txt") // for intellij which uses ./out rather than ./build
 
     inputs.files sourceSets.test.runtimeClasspath
-    outputs.dir outputDir
+    //outputs.dir outputDir
+    outputs.files(buildRes, outRes)
 
     doLast {
-        outputDir.mkdirs()
-        file("${outputDir}/plugin-classpath.txt").text = sourceSets.test.runtimeClasspath.join('\n',)
+        buildRes.getParentFile().mkdirs()
+        outRes.getParentFile().mkdirs()
+        file(buildRes).text = sourceSets.test.runtimeClasspath.join('\n',)
+        file(outRes).text = sourceSets.test.runtimeClasspath.join('\n',)
     }
 }
 
@@ -48,7 +53,7 @@ task wrapper(type: Wrapper) {
     gradleVersion = '4.0'
 }
 
-// UNCOMMENT THIS SECTION AND USE ONLY FROM THE COMMAND LINE OTHERWISE TRAVIS ABORTS
+// ENABLE THIS SECTION AND USE ONLY FROM THE COMMAND LINE OTHERWISE TRAVIS ABORTS
 
 // snapshot location https://oss.sonatype.org/content/repositories/snapshots/com/portingle/classpath-hell/
 // staging https://oss.sonatype.org/service/local/staging/deploy/maven2/com/portingle/classpath-hell/
@@ -60,53 +65,57 @@ task wrapper(type: Wrapper) {
 // consider using the Gradle Nexus Staging Maven as this avoids need to use the NExus gui to close and release the stage artifact.
 //
 
-//apply plugin: 'signing'
-//
-//signing {
-//    sign configurations.archives
-//}
+def release=false
 
-//uploadArchives {
-//    repositories {
-//        mavenDeployer {
-//            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-//
-//            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-//                authentication(userName: sonatypeUsername, password: sonatypePassword)
-//            }
-//
-//            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-//                authentication(userName: sonatypeUsername, password: sonatypePassword)
-//            }
-//
-//            pom.project {
-//                name 'classpath-hell'
-//                packaging 'jar'
-//
-//                // optionally artifactId can be defined here
-//                description 'ClasspathHell Gradle Plugin detects duplicate resources on the classpath'
-//                url 'https://github.com/portingle/classpathHell'
-//
-//                scm {
-//                    connection 'scm:git@github.com:portingle/classpathHell.git'
-//                    developerConnection 'scm:git@github.com:portingle/classpathHell.git'
-//                    url 'scm:git@github.com:portingle/classpathHell.git'
-//                }
-//
-//                licenses {
-//                    license {
-//                        name 'The MIT Licence (MIT)'
-//                        url 'https://opensource.org/licenses/MIT'
-//                    }
-//                }
-//
-//                developers {
-//                    developer {
-//                        id 'Johnlon'
-//                        name 'John Lonergan'
-//                    }
-//                }
-//            }
-//        }
-//    }
-//}
+if (release) {
+    apply plugin: 'signing'
+
+    signing {
+        sign configurations.archives
+    }
+
+    uploadArchives {
+        repositories {
+            mavenDeployer {
+                beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+                repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                    authentication(userName: sonatypeUsername, password: sonatypePassword)
+                }
+
+                snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+                    authentication(userName: sonatypeUsername, password: sonatypePassword)
+                }
+
+                pom.project {
+                    name 'classpath-hell'
+                    packaging 'jar'
+
+                    // optionally artifactId can be defined here
+                    description 'ClasspathHell Gradle Plugin detects duplicate resources on the classpath'
+                    url 'https://github.com/portingle/classpathHell'
+
+                    scm {
+                        connection 'scm:git@github.com:portingle/classpathHell.git'
+                        developerConnection 'scm:git@github.com:portingle/classpathHell.git'
+                        url 'scm:git@github.com:portingle/classpathHell.git'
+                    }
+
+                    licenses {
+                        license {
+                            name 'The MIT Licence (MIT)'
+                            url 'https://opensource.org/licenses/MIT'
+                        }
+                    }
+
+                    developers {
+                        developer {
+                            id 'Johnlon'
+                            name 'John Lonergan'
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

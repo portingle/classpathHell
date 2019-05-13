@@ -5,6 +5,7 @@ import org.gradle.api.artifacts.ResolvedArtifact
 
 class ClasspathHellPluginExtension {
 
+    /* set to true to get additional logging */
     Boolean trace = false
 
     /* utility */
@@ -25,11 +26,14 @@ class ClasspathHellPluginExtension {
     /* optional list of configurations to limit the scan to */
     List<Configuration> configurationsToScan = []
 
+    /* if true then instances of a resource that have the same hash will be considered equivalent and not be reported */
+    Boolean suppressExactDupes = false
+
     /*
     override to provide an alternative inclusion strategy to the default.
      */
-    def Closure<ResolvedArtifact> includeArtifact = { ResolvedArtifact f ->
-        // default strategy is to exclude artefacts according to a black list
+    Closure<Boolean> includeArtifact = { ResolvedArtifact f ->
+        // default strategy is to exclude artifacts according to a black list
         excludeArtifactPaths(artifactExclusions.toList(), f)
     }
 
@@ -48,7 +52,7 @@ class ClasspathHellPluginExtension {
 
     /* A convenience constant defining a set of common defaults that are not very interesting.
     */
-    List<String> CommonResourceExclusions() {
+    static List<String> CommonResourceExclusions() {
         return [
             "^rootdoc.txt\$",
             "^about.html\$",
@@ -61,25 +65,25 @@ class ClasspathHellPluginExtension {
             ".*javax/annotation/.*"
     ] }
 
-    /** Optionall override or modify to provide an alternative list of resources to exclude from the check.
+    /** Optionally override or modify to provide an alternative list of resources to exclude from the check.
      */
     List<String> resourceExclusions = []
 
     /*
     override to provide an alternative inclusion strategy to the default.
      */
-    def Closure<Boolean> includeResource = { String f ->
+    Closure<Boolean> includeResource = { String f ->
         excludeMatches(resourceExclusions, f)
     }
 
     @Override
-    public java.lang.String toString() {
+    String toString() {
         return "ClasspathHellPluginExtension{" +
                 "artifactExclusions=" + artifactExclusions +
                 ", configurationsToScan=" + configurationsToScan +
                 ", includeArtifact=" + includeArtifact +
                 ", resourceExclusions=" + resourceExclusions +
                 ", includeResource=" + includeResource +
-                '}';
+                '}'
     }
 }

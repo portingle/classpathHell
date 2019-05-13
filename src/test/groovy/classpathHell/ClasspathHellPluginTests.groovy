@@ -17,36 +17,36 @@ import static org.junit.Assert.assertTrue
 
 class ClasspathHellPluginTests {
     @Rule
-    public final TemporaryFolder testProjectDir = new TemporaryFolder();
+    public final TemporaryFolder testProjectDir = new TemporaryFolder()
 
-    private File buildFile;
+    private File buildFile
     private File propertiesFile
 
     private List pluginClasspath
 
     @Before
-    public void setup() throws IOException {
+    void setup() throws IOException {
         buildFile = testProjectDir.newFile('build.gradle')
         propertiesFile = testProjectDir.newFile('gradle.properties')
         URL classpathResource = getClass().classLoader.getResource('plugin-classpath.txt')
         if (classpathResource==null)
-            throw new RuntimeException('Cannot find plugin-classpath.txt - did the gradle build correctly create it?')
+            throw new RuntimeException('Cannot find plugin-classpath.txt - did the gradle build correctly create it - run the "createPluginClasspath" task?')
         pluginClasspath = classpathResource.readLines().collect { new File(it) }
     }
 
     @Test
-    public void testCanApply() {
+    void testCanApply() {
         Project project = ProjectBuilder.builder().build()
         project.pluginManager.apply 'com.portingle.classpathHell'
 
         assertTrue(project.tasks.checkClasspath instanceof ClasspathHellTask)
 
-        ClasspathHellTask task = project.tasks.checkClasspath
+        ClasspathHellTask task = (ClasspathHellTask)project.tasks.checkClasspath
         task.action()
     }
 
     @Test
-    public void testScansConfigurations() {
+    void testScansConfigurations() {
         buildFile << '''
             plugins {
                 id 'com.portingle.classpathHell'
@@ -59,18 +59,19 @@ class ClasspathHellPluginTests {
             '''
 
         GradleRunner runner = GradleRunner.create()
+                .forwardOutput()
                 .withProjectDir(testProjectDir.getRoot())
                 .withArguments('--debug', 'checkClasspath', '--stacktrace', '--refresh-dependencies')
                 .withPluginClasspath(pluginClasspath)
         BuildResult result = runner.build()
 
-        assertTrue(result.getOutput().contains("checking configuration ':config1'"));
-        assertTrue(result.getOutput().contains("checking configuration ':config2'"));
-        assertEquals(result.task(":checkClasspath").getOutcome(), SUCCESS);
+        assertTrue(result.getOutput().contains("checking configuration ':config1'"))
+        assertTrue(result.getOutput().contains("checking configuration ':config2'"))
+        assertEquals(result.task(":checkClasspath").getOutcome(), SUCCESS)
     }
 
     @Test
-    public void testScansSelectiveConfigurations() {
+    void testScansSelectiveConfigurations() {
         buildFile << '''
             plugins {
                 id 'com.portingle.classpathHell'
@@ -92,18 +93,19 @@ class ClasspathHellPluginTests {
             '''
 
         GradleRunner runner = GradleRunner.create()
+                .forwardOutput()
                 .withProjectDir(testProjectDir.getRoot())
                 .withArguments('--debug', 'checkClasspath', '--stacktrace', '--refresh-dependencies')
                 .withPluginClasspath(pluginClasspath)
         BuildResult result = runner.build()
 
-        assertFalse(result.getOutput().contains("checking configuration ':config1'"));
-        assertTrue(result.getOutput().contains("checking configuration ':config2'"));
-        assertEquals(result.task(":checkClasspath").getOutcome(), SUCCESS);
+        assertFalse(result.getOutput().contains("checking configuration ':config1'"))
+        assertTrue(result.getOutput().contains("checking configuration ':config2'"))
+        assertEquals(result.task(":checkClasspath").getOutcome(), SUCCESS)
     }
 
     @Test
-    public void testReportsDupes() {
+    void testReportsDupes() {
         buildFile << '''
             plugins {
                 id 'com.portingle.classpathHell'
@@ -121,6 +123,7 @@ class ClasspathHellPluginTests {
             '''
 
         GradleRunner runner = GradleRunner.create()
+                .forwardOutput()
                 .withProjectDir(testProjectDir.getRoot())
                 .withArguments('checkClasspath')
                 .withPluginClasspath(pluginClasspath)
@@ -128,13 +131,52 @@ class ClasspathHellPluginTests {
         BuildResult result = runner.buildAndFail()
 
         def output = result.getOutput()
-        assertTrue(output.contains('classpath: compile contains duplicate resource: org/hamcrest/core/CombinableMatcher$CombinableBothMatcher.class'));
-        assertEquals(result.task(":checkClasspath").getOutcome(), FAILED);
+        assertTrue(output.contains('classpath: compile contains duplicate resource: org/hamcrest/core/CombinableMatcher$CombinableBothMatcher.class'))
+        assertEquals(result.task(":checkClasspath").getOutcome(), FAILED)
 
     }
 
     @Test
-    public void testOverrideExtensions() {
+    void testSuppressionOfExactDupes() {
+        buildFile << '''
+            plugins {
+                id 'com.portingle.classpathHell'
+            }
+            apply plugin: 'java'
+
+            repositories {
+                mavenCentral()
+            }
+            dependencies {
+                compile group: 'org.hamcrest', name: 'hamcrest-all', version: '1.3'
+                compile group: 'org.hamcrest', name: 'hamcrest-core', version: '1.3'
+            }
+            
+           
+            classpathHell {
+                suppressExactDupes = true
+                resourceExclusions = CommonResourceExclusions()
+            }
+   
+            '''
+
+        GradleRunner runner = GradleRunner.create()
+                .forwardOutput()
+                .withProjectDir(testProjectDir.getRoot())
+                .withArguments("-debug", 'checkClasspath')
+                .withPluginClasspath(pluginClasspath)
+
+        BuildResult result = runner.build()
+
+        def output = result.getOutput()
+
+        assertFalse(output.contains('classpath: compile contains duplicate resource'))
+        assertEquals(result.task(":checkClasspath").getOutcome(), SUCCESS)
+
+    }
+
+    @Test
+    void testOverrideExtensions() {
         buildFile << '''
             plugins {
                 id 'com.portingle.classpathHell'
@@ -169,6 +211,7 @@ class ClasspathHellPluginTests {
             '''
 
         GradleRunner runner = GradleRunner.create()
+                .forwardOutput()
                 .withProjectDir(testProjectDir.getRoot())
                 .withArguments('--debug', 'checkClasspath')
                 .withPluginClasspath(pluginClasspath)

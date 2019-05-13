@@ -1,5 +1,16 @@
 # RELEASE NOTES
 
+- 1.4
+
+  - allow convenient suppression of 'benign' exact matches where there are dupes but they have the same impl
+  
+```groovy
+classpathHell {
+    suppressExactDupes = true
+}
+```
+ 
+
 - 1.3
 
   - added configurationsToScan

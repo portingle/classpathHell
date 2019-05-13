@@ -7,10 +7,10 @@ import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ResolvedArtifact
 import org.gradle.api.artifacts.ResolvedDependency
 import org.gradle.api.tasks.TaskAction
+import org.gradle.internal.impldep.org.apache.commons.codec.digest.DigestUtils
 
 import java.util.regex.Pattern
 import java.util.zip.ZipEntry
-import java.util.zip.ZipException
 import java.util.zip.ZipFile
 
 @PackageScope
@@ -20,35 +20,25 @@ class ClasspathHellTask extends DefaultTask {
         if (trace) logger.debug("classpathHell: " + s)
     }
 
-    static Collection<String> getResourcesFromJarFile(final File file, final Pattern pattern) {
+    static Collection<String> getResourcesFromJarFile(final File jarFile, final Pattern pattern) {
 
-        final ArrayList<String> retval = new ArrayList<String>();
+        final ArrayList<String> resourceFiles = new ArrayList<String>()
 
-        ZipFile zf;
-
-        try {
-            zf = new ZipFile(file);
-        } catch (final ZipException ex) {
-            throw new Error(ex)
-        } catch (final IOException ex) {
-            throw new Error(ex)
-        }
+        ZipFile zf = new ZipFile(jarFile)
         final Enumeration e = zf.entries()
 
         while (e.hasMoreElements()) {
             final ZipEntry ze = (ZipEntry) e.nextElement()
-            final String fileName = ze.getName()
-            final boolean accept = pattern.matcher(fileName).matches()
+
+            final String resourceFileName = ze.getName()
+            final boolean accept = pattern.matcher(resourceFileName).matches()
             if (accept) {
-                retval.add(fileName)
+                resourceFiles.add(resourceFileName)
             }
         }
-        try {
-            zf.close()
-        } catch (final IOException ex) {
-            throw new Error(ex)
-        }
-        return retval;
+        zf.close()
+
+        return resourceFiles
     }
 
     static String gav(ResolvedDependency d) {
@@ -87,21 +77,45 @@ class ClasspathHellTask extends DefaultTask {
         findDepC([], deps, source)
     }
 
-    static Set<ResolvedArtifact> suppressPermittedCombinations(Set<ResolvedArtifact> dupes) {
-        // unimplemented !!!
+    static Set<ResolvedArtifact> suppressPermittedCombinations(boolean suppressByHash, String resourcePath, Set<ResolvedArtifact> dupes) {
+        if (!suppressByHash) return dupes
+
+        Set<String> hashes = new HashSet()
+        Set<String> ids = new HashSet()
+        dupes.each { file ->
+            ZipFile zf = new ZipFile(file.file)
+            ZipEntry ze = zf.getEntry(resourcePath)
+            InputStream zi = zf.getInputStream(ze)
+
+            def md5 = DigestUtils.md5Hex(zi)
+            hashes.add(md5)
+
+           // logger.warn("classpathHell: " + resourcePath + " #md5 " + md5 + " @ " + file.id.componentIdentifier)
+            ids.add(file.id.componentIdentifier.toString())
+
+            zi.close()
+        }
+
+        if (hashes.size() == 1) {
+          //  logger.warn("classpathHell: " + resourcePath + " has been automatically suppressed across : " + ids)
+
+            return new HashSet()
+        }
+
         return dupes
     }
 
-    static List<String> getResources(File f) {
+    static List<String> getResources(File jarOrDir) {
         ArrayList<String> files = new ArrayList<String>()
-        if (f.isFile()) {
-            Collection<String> r = getResourcesFromJarFile(f, Pattern.compile(".*"))
-            files.addAll(r)
+        if (jarOrDir.isFile()) {
+            Collection<String> resourcesInJar = getResourcesFromJarFile(jarOrDir, Pattern.compile(".*"))
+            files.addAll(resourcesInJar)
         } else {
-            f.listFiles().each { File dir ->
-                Collection<String> r = getResources(dir)
+            // dir
+            jarOrDir.listFiles().each { File fileOrDir ->
+                Collection<String> resourcesInJar = getResources(fileOrDir)
 
-                files.addAll(r)
+                files.addAll(resourcesInJar)
             }
         }
         return files
@@ -120,25 +134,26 @@ class ClasspathHellTask extends DefaultTask {
 
         boolean hadDupes = false
 
-        def configurations = ext.configurationsToScan
+        List<Configuration> configurations = ext.configurationsToScan
         if (!configurations) {
             configurations = this.project.getConfigurations()
         }
 
         configurations.findAll {
             canBeResolved(it)
-        }.each { conf ->
+        }.each { Configuration conf ->
             logger.debug("classpathHell: checking " + conf.toString())
 
             Map<String, Set<ResolvedArtifact>> counts = new HashMap()
             conf.getResolvedConfiguration().getResolvedArtifacts().each {
-                ResolvedArtifact at ->
+                ResolvedArtifact resolvedArtifact ->
 
-                    if (ext.includeArtifact.call(at)) {
-                        log(ext.trace,"including artifact <" + at.moduleVersion.id + ">")
+                    if (ext.includeArtifact.call(resolvedArtifact)) {
+                        log(ext.trace,"including artifact <" + resolvedArtifact.moduleVersion.id + ">")
 
-                        File file = at.file
-                        Collection<String> r = getResources(file).findAll {
+                        File file = resolvedArtifact.file
+                        def resourcesInFile = getResources(file)
+                        Collection<String> includedResources = resourcesInFile.findAll {
                             String res ->
                                 Boolean inc = ext.includeResource.call(res)
 
@@ -147,33 +162,40 @@ class ClasspathHellTask extends DefaultTask {
                                 inc
                         }
 
-                        r.each { res ->
+                        // organise found resources by resource name
+                        includedResources.each { res ->
                             Set<ResolvedArtifact> sources = counts.get(res)
                             if (!counts.containsKey(res)) {
                                 sources = new HashSet()
                                 counts.put(res, sources)
                             }
-                            sources.add(at)
+                            sources.add(resolvedArtifact)
                         }
                     } else
-                        log(ext.trace, "excluding artifact <" + at.moduleVersion.id + ">")
+                        log(ext.trace, "excluding artifact <" + resolvedArtifact.moduleVersion.id + ">")
 
             }
 
-            counts.entrySet().each { e ->
-                if (e.value.size() > 1) {
-                    Set<ResolvedArtifact> dupes = suppressPermittedCombinations(e.value)
+            counts.entrySet().each { Map.Entry<String, Set<ResolvedArtifact>> e ->
+                Set<ResolvedArtifact> similarResolvedArtifacts = e.value
+                String resourcePath = e.key
+                if (similarResolvedArtifacts.size() > 1) {
+                    Set<ResolvedArtifact> dupes = suppressPermittedCombinations(ext.suppressExactDupes, resourcePath, similarResolvedArtifacts)
 
-                    hadDupes = true
+                    boolean thisHasDupes = !dupes.isEmpty()
 
-                    System.err.println("classpath: " + conf.name + " contains duplicate resource: " + e.key)
+                    if (thisHasDupes) {
+                        System.err.println("classpath: " + conf.name + " contains duplicate resource: " + resourcePath)
 
-                    dupes.toList().sort().each { source ->
-                        System.err.println(" found within dependency: " + source.moduleVersion.id)
-                        findRoute(conf, source).toList().sort().each { route ->
-                            System.err.println("  imported via: " + route)
+                        dupes.toList().sort().each { source ->
+                            System.err.println(" found within dependency: " + source.moduleVersion.id)
+                            findRoute(conf, source).toList().sort().each { route ->
+                                System.err.println("  imported via: " + route)
+                            }
                         }
                     }
+
+                    if (thisHasDupes) hadDupes = true
                 }
             }
         }
