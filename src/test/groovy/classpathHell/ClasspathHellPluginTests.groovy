@@ -5,9 +5,11 @@ import org.gradle.testfixtures.ProjectBuilder
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import org.junit.Before
+import org.junit.FixMethodOrder
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.junit.runners.MethodSorters
 
 import static org.gradle.testkit.runner.TaskOutcome.FAILED
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
@@ -15,6 +17,7 @@ import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertTrue
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 class ClasspathHellPluginTests {
     @Rule
     public final TemporaryFolder testProjectDir = new TemporaryFolder()
@@ -26,6 +29,7 @@ class ClasspathHellPluginTests {
 
     @Before
     void setup() throws IOException {
+
         buildFile = testProjectDir.newFile('build.gradle')
         propertiesFile = testProjectDir.newFile('gradle.properties')
         URL classpathResource = getClass().classLoader.getResource('plugin-classpath.txt')
@@ -35,7 +39,7 @@ class ClasspathHellPluginTests {
     }
 
     @Test
-    void testCanApply() {
+    void testCanApplySettings() {
         Project project = ProjectBuilder.builder().build()
         project.pluginManager.apply 'com.portingle.classpathHell'
 
@@ -61,12 +65,12 @@ class ClasspathHellPluginTests {
         GradleRunner runner = GradleRunner.create()
                 .forwardOutput()
                 .withProjectDir(testProjectDir.getRoot())
-                .withArguments('--debug', 'checkClasspath', '--stacktrace', '--refresh-dependencies')
+                .withArguments('--info', 'checkClasspath', '--stacktrace', '--refresh-dependencies')
                 .withPluginClasspath(pluginClasspath)
         BuildResult result = runner.build()
 
-        assertTrue(result.getOutput().contains("checking configuration ':config1'"))
-        assertTrue(result.getOutput().contains("checking configuration ':config2'"))
+        assertTrue(result.getOutput().contains("checking configuration : 'config1'"))
+        assertTrue(result.getOutput().contains("checking configuration : 'config2'"))
         assertEquals(result.task(":checkClasspath").getOutcome(), SUCCESS)
     }
 
@@ -95,12 +99,12 @@ class ClasspathHellPluginTests {
         GradleRunner runner = GradleRunner.create()
                 .forwardOutput()
                 .withProjectDir(testProjectDir.getRoot())
-                .withArguments('--debug', 'checkClasspath', '--stacktrace', '--refresh-dependencies')
+                .withArguments('--info', 'checkClasspath', '--stacktrace', '--refresh-dependencies')
                 .withPluginClasspath(pluginClasspath)
         BuildResult result = runner.build()
 
-        assertFalse(result.getOutput().contains("checking configuration ':config1'"))
-        assertTrue(result.getOutput().contains("checking configuration ':config2'"))
+        assertFalse(result.getOutput().contains("checking configuration : 'config1'"))
+        assertTrue(result.getOutput().contains("checking configuration : 'config2'"))
         assertEquals(result.task(":checkClasspath").getOutcome(), SUCCESS)
     }
 
@@ -119,6 +123,10 @@ class ClasspathHellPluginTests {
                 compile group: 'org.hamcrest', name: 'hamcrest-all', version: '1.3'
                 compile group: 'org.hamcrest', name: 'hamcrest-core', version: '1.3'
             }
+            
+            classpathHell {
+                configurationsToScan = [ configurations.compile ]
+            }
    
             '''
 
@@ -131,13 +139,13 @@ class ClasspathHellPluginTests {
         BuildResult result = runner.buildAndFail()
 
         def output = result.getOutput()
-        assertTrue(output.contains('classpath: compile contains duplicate resource: org/hamcrest/core/CombinableMatcher$CombinableBothMatcher.class'))
+        assertTrue(output.contains("configuration 'compile' contains duplicate resource: org/hamcrest/core/CombinableMatcher"))
         assertEquals(result.task(":checkClasspath").getOutcome(), FAILED)
 
     }
 
     @Test
-    void testSuppressionOfExactDupes() {
+    void testASuppressionOfExactDupes() {
         buildFile << '''
             plugins {
                 id 'com.portingle.classpathHell'
@@ -152,10 +160,16 @@ class ClasspathHellPluginTests {
                 compile group: 'org.hamcrest', name: 'hamcrest-core', version: '1.3'
             }
             
-           
             classpathHell {
+                // some additional logging; note one must also run with "--info" or "--debug" if you want to see this detail.
+                // specify the property as shown below or set the gradle property -PclasspathHell.trace=true
+                trace = true // overridden in the test runner
+
+                // only scan one configuration as this makes the test's verification easier                
+                configurationsToScan = [ configurations.compile]
+                
+                // configure automatic resolution of "benign" dupes 
                 suppressExactDupes = true
-                resourceExclusions = CommonResourceExclusions()
             }
    
             '''
@@ -163,16 +177,22 @@ class ClasspathHellPluginTests {
         GradleRunner runner = GradleRunner.create()
                 .forwardOutput()
                 .withProjectDir(testProjectDir.getRoot())
-                .withArguments("-debug", 'checkClasspath')
+                .withArguments( '-PclasspathHell.trace=true', '--info', 'checkClasspath')
                 .withPluginClasspath(pluginClasspath)
 
-        BuildResult result = runner.build()
+        BuildResult result = runner.buildAndFail()
 
         def output = result.getOutput()
+        assertTrue(output.contains("configuration 'compile' contains duplicate resource: META-INF/MANIFEST.MF"))
+        assertTrue(output.contains('found within dependency: org.hamcrest:hamcrest-core:1.3'))
+        assertTrue(output.contains('found within dependency: org.hamcrest:hamcrest-all:1.3'))
+        assertEquals(result.task(":checkClasspath").getOutcome(), FAILED)
 
-        assertFalse(output.contains('classpath: compile contains duplicate resource'))
-        assertEquals(result.task(":checkClasspath").getOutcome(), SUCCESS)
+        // check trace is being emitted
+        assertTrue(output.contains('META-INF/ #md5'))
 
+        def all = output.findAll('contains duplicate resource[^\\n]*')
+        assertTrue("expected exactly one duplicate, however found : " + all, all.size() == 1)
     }
 
     @Test
@@ -202,7 +222,10 @@ class ClasspathHellPluginTests {
 
                 // Demonstrate replacing the default set of exclusions
                 resourceExclusions = [ ".*/BaseMatcher.class" ]
-            }
+   
+                // scan a only one config so that test logs less
+                configurationsToScan = [ configurations.compile]
+               }
 
             dependencies {
                 compile group: 'org.hamcrest', name: 'hamcrest-all', version: '1.3'
@@ -213,9 +236,10 @@ class ClasspathHellPluginTests {
         GradleRunner runner = GradleRunner.create()
                 .forwardOutput()
                 .withProjectDir(testProjectDir.getRoot())
-                .withArguments('--debug', 'checkClasspath')
+                .withArguments('--info', 'checkClasspath')
                 .withPluginClasspath(pluginClasspath)
 
+        // should pass as we've removed the dup artifact
         BuildResult result = runner.build()
 
         assertTrue(result.getOutput().contains('including artifact <org.hamcrest:hamcrest-core:1.3>'))

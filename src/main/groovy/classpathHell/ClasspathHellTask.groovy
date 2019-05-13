@@ -6,19 +6,17 @@ import org.gradle.api.GradleException
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ResolvedArtifact
 import org.gradle.api.artifacts.ResolvedDependency
+import org.gradle.api.logging.LogLevel
 import org.gradle.api.tasks.TaskAction
-import org.gradle.internal.impldep.org.apache.commons.codec.digest.DigestUtils
 
+import java.security.DigestInputStream
+import java.security.MessageDigest
 import java.util.regex.Pattern
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 
 @PackageScope
 class ClasspathHellTask extends DefaultTask {
-
-    def log(boolean trace, String s) {
-        if (trace) logger.debug("classpathHell: " + s)
-    }
 
     static Collection<String> getResourcesFromJarFile(final File jarFile, final Pattern pattern) {
 
@@ -77,7 +75,25 @@ class ClasspathHellTask extends DefaultTask {
         findDepC([], deps, source)
     }
 
-    static Set<ResolvedArtifact> suppressPermittedCombinations(boolean suppressByHash, String resourcePath, Set<ResolvedArtifact> dupes) {
+    private static String getHexaString(byte[] data) {
+        String result = new BigInteger(1, data).toString(16)
+        return result
+    }
+
+
+    private static String getHashOfStream(InputStream stream) {
+        DigestInputStream digestInputStream = new DigestInputStream(stream, MessageDigest.getInstance("MD5"))
+        byte[] buffer = new byte[4096]
+        while (digestInputStream.read(buffer) > -1) {
+            // pass
+        }
+        MessageDigest md1 = digestInputStream.getMessageDigest()
+        byte[] digestBytes = md1.digest()
+        def digestStr = getHexaString(digestBytes)
+        return digestStr
+    }
+
+    Set<ResolvedArtifact> suppressPermittedCombinations(boolean suppressByHash, String resourcePath, Set<ResolvedArtifact> dupes, Closure trace) {
         if (!suppressByHash) return dupes
 
         Set<String> hashes = new HashSet()
@@ -87,17 +103,18 @@ class ClasspathHellTask extends DefaultTask {
             ZipEntry ze = zf.getEntry(resourcePath)
             InputStream zi = zf.getInputStream(ze)
 
-            def md5 = DigestUtils.md5Hex(zi)
+            String md5 = ClasspathHellTask.getHashOfStream(zi)
             hashes.add(md5)
 
-           // logger.warn("classpathHell: " + resourcePath + " #md5 " + md5 + " @ " + file.id.componentIdentifier)
+            trace("   " + resourcePath + " #md5 " + md5 + " @ " + file.id.componentIdentifier)
+
             ids.add(file.id.componentIdentifier.toString())
 
             zi.close()
         }
 
         if (hashes.size() == 1) {
-          //  logger.warn("classpathHell: " + resourcePath + " has been automatically suppressed across : " + ids)
+            trace("   " + resourcePath + " has been automatically suppressed across : " + ids)
 
             return new HashSet()
         }
@@ -130,7 +147,27 @@ class ClasspathHellTask extends DefaultTask {
 
     @TaskAction
     void action() {
+
         ClasspathHellPluginExtension ext = project.classpathHell
+
+        boolean doTrace = ext.trace
+        if (project.hasProperty('classpathHell.trace')) {
+            doTrace = Boolean.valueOf(project['classpathHell.trace'].toString())
+        }
+        if (project.logging.getLevel() == LogLevel.DEBUG) {
+            doTrace = true
+        }
+
+        logger.warn("classpathHell: trace=" + doTrace)
+        if (doTrace && !(project.logging.getLevel() ==  null ||
+                project.logging.getLevel() == LogLevel.INFO ||
+                project.logging.getLevel() == LogLevel.DEBUG))
+            logger.warn("classpathHell: 'trace=true' however nothing will be shown unless the log level is --info or --debug")
+
+        def trace = {
+            String s ->
+                if (doTrace) logger.info("classpathHell: " + s)
+        }
 
         boolean hadDupes = false
 
@@ -142,14 +179,14 @@ class ClasspathHellTask extends DefaultTask {
         configurations.findAll {
             canBeResolved(it)
         }.each { Configuration conf ->
-            logger.debug("classpathHell: checking " + conf.toString())
+            logger.info("classpathHell: checking configuration : '" + conf.getName() + "'")
 
             Map<String, Set<ResolvedArtifact>> counts = new HashMap()
             conf.getResolvedConfiguration().getResolvedArtifacts().each {
                 ResolvedArtifact resolvedArtifact ->
 
                     if (ext.includeArtifact.call(resolvedArtifact)) {
-                        log(ext.trace,"including artifact <" + resolvedArtifact.moduleVersion.id + ">")
+                        trace("including artifact <" + resolvedArtifact.moduleVersion.id + ">")
 
                         File file = resolvedArtifact.file
                         def resourcesInFile = getResources(file)
@@ -157,8 +194,8 @@ class ClasspathHellTask extends DefaultTask {
                             String res ->
                                 Boolean inc = ext.includeResource.call(res)
 
-                                if (inc) log(ext.trace, " including resource <" + res + ">")
-                                else log(ext.trace, " excluding resource <" + res + ">")
+                                if (inc) trace(" including resource <" + res + ">")
+                                else trace(" excluding resource <" + res + ">")
                                 inc
                         }
 
@@ -172,20 +209,22 @@ class ClasspathHellTask extends DefaultTask {
                             sources.add(resolvedArtifact)
                         }
                     } else
-                        log(ext.trace, "excluding artifact <" + resolvedArtifact.moduleVersion.id + ">")
+                        trace("excluding artifact <" + resolvedArtifact.moduleVersion.id + ">")
 
             }
 
             counts.entrySet().each { Map.Entry<String, Set<ResolvedArtifact>> e ->
-                Set<ResolvedArtifact> similarResolvedArtifacts = e.value
                 String resourcePath = e.key
+                trace("checking resource : " + resourcePath)
+
+                Set<ResolvedArtifact> similarResolvedArtifacts = e.value
                 if (similarResolvedArtifacts.size() > 1) {
-                    Set<ResolvedArtifact> dupes = suppressPermittedCombinations(ext.suppressExactDupes, resourcePath, similarResolvedArtifacts)
+                    Set<ResolvedArtifact> dupes = suppressPermittedCombinations(ext.suppressExactDupes, resourcePath, similarResolvedArtifacts, trace)
 
                     boolean thisHasDupes = !dupes.isEmpty()
 
                     if (thisHasDupes) {
-                        System.err.println("classpath: " + conf.name + " contains duplicate resource: " + resourcePath)
+                        System.err.println("configuration '" + conf.name + "' contains duplicate resource: " + resourcePath)
 
                         dupes.toList().sort().each { source ->
                             System.err.println(" found within dependency: " + source.moduleVersion.id)

@@ -28,7 +28,29 @@ task sourcesJar(type: Jar) {
 artifacts {
     archives javadocJar, sourcesJar
 }
+test {
+    logging.captureStandardOutput LogLevel.WARN
 
+
+    testLogging {
+        // set options for log level LIFECYCLE
+        events "failed"
+        exceptionFormat "full"
+        showExceptions = true
+        showCauses = true
+        showStandardStreams = true
+
+        // set options for log level DEBUG
+//        debug {
+//            events "skipped", "failed"
+//            exceptionFormat "full"
+//        }
+
+        // remove standard output/error logging from --info builds
+        // by assigning only 'failed' and 'skipped' events
+        info.events = ["failed", "skipped"]
+    }
+}
 // see http://jdpgrailsdev.github.io/blog/2016/03/29/gradle_test_kit.html
 task createPluginClasspath {
     //def outputDir = file("${buildDir}/resources/test")

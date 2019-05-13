@@ -161,15 +161,32 @@ classpathHell {
 ```
 
 
-### Extra logging
+### Extra info logging
 
-Set the trace property to true
+To get more detailed info level logging there are three options
+- set the "trace" property in the gradle config to true.
 
 ```groovy
 classpathHell {
-   trace= true
+    // some additional logging; note one must also run with "--info" if you want to see this as the logging comes out with "INFO" level
+    trace= true
 }
 ```
+FYI you must also use "--info" on gradle or you will see nothing.
+Note: we don't use debug level for this because that turns on far too much tracing.
+
+- set by gradle property
+
+```bash
+./gradlew -PclasspathHell.trace=true --info build
+``` 
+FYI you must also use "--info" on gradle or you will see nothing.
+
+- turn on debug 
+
+```bash
+./gradlew --debug build
+``` 
 
 ## Gradle task
 
