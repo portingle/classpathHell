@@ -82,7 +82,9 @@ class ClasspathHellTask extends DefaultTask {
 
 
     private static String getHashOfStream(InputStream stream) {
-        DigestInputStream digestInputStream = new DigestInputStream(stream, MessageDigest.getInstance("MD5"))
+        def instance = MessageDigest.getInstance("MD5")
+
+        DigestInputStream digestInputStream = new DigestInputStream(stream, instance)
         byte[] buffer = new byte[4096]
         while (digestInputStream.read(buffer) > -1) {
             // pass

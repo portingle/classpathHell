@@ -163,13 +163,15 @@ class ClasspathHellPluginTests {
             classpathHell {
                 // some additional logging; note one must also run with "--info" or "--debug" if you want to see this detail.
                 // specify the property as shown below or set the gradle property -PclasspathHell.trace=true
-                trace = true // overridden in the test runner
+                trace = true
 
                 // only scan one configuration as this makes the test's verification easier                
                 configurationsToScan = [ configurations.compile]
+                 
+                resourceExclusions = [ "META-INF/MANIFEST.MF" ]
                 
                 // configure automatic resolution of "benign" dupes 
-                suppressExactDupes = true
+                suppressExactDupes = true 
             }
    
             '''
@@ -177,22 +179,16 @@ class ClasspathHellPluginTests {
         GradleRunner runner = GradleRunner.create()
                 .forwardOutput()
                 .withProjectDir(testProjectDir.getRoot())
-                .withArguments( '-PclasspathHell.trace=true', '--info', 'checkClasspath')
+                .withArguments( '--info', 'checkClasspath')
                 .withPluginClasspath(pluginClasspath)
 
-        BuildResult result = runner.buildAndFail()
+        BuildResult result = runner.build() // expect success
 
         def output = result.getOutput()
-        assertTrue(output.contains("configuration 'compile' contains duplicate resource: META-INF/MANIFEST.MF"))
-        assertTrue(output.contains('found within dependency: org.hamcrest:hamcrest-core:1.3'))
-        assertTrue(output.contains('found within dependency: org.hamcrest:hamcrest-all:1.3'))
-        assertEquals(result.task(":checkClasspath").getOutcome(), FAILED)
 
-        // check trace is being emitted
-        assertTrue(output.contains('META-INF/ #md5'))
-
-        def all = output.findAll('contains duplicate resource[^\\n]*')
-        assertTrue("expected exactly one duplicate, however found : " + all, all.size() == 1)
+        // check suppression trace
+        assertTrue(output.contains("org/hamcrest/core/CombinableMatcher\$CombinableBothMatcher.class has been automatically suppressed across : [org.hamcrest:hamcrest-all:1.3, org.hamcrest:hamcrest-core:1.3]"))
+        assertTrue(output.contains('org/hamcrest/core/CombinableMatcher\$CombinableBothMatcher.class #md5'))
     }
 
     @Test

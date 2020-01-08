@@ -1,12 +1,15 @@
 apply plugin: 'groovy'
 apply plugin: 'maven'
+apply plugin: 'maven-publish'
+
 
 group 'com.portingle'
 archivesBaseName = "classpath-hell"
-version '1.5'
+version '1.6'
 
 repositories {
     mavenCentral()
+    mavenLocal()
 }
 
 dependencies {
@@ -71,11 +74,6 @@ task createPluginClasspath {
 
 test.dependsOn(['createPluginClasspath'])
 
-task wrapper(type: Wrapper) {
-    gradleVersion = '4.0'
-}
-
-// TODO ....
 // consider using the Gradle Nexus Staging Maven as this avoids need to use the NExus gui to close and release the stage artifact.
 // if the sonatypeUsername is provided by the gradle properties then a release is enabled
 
@@ -132,9 +130,10 @@ if (project.properties.containsKey("sonatypeUsername")) {
         }
     }
 } else {
-    println("release is disabled - 'sonatypeUsername' is undefined")}
+    println("uploadArchives for release is disabled - 'sonatypeUsername' is undefined")}
 
 
 wrapper {
-    distributionUrl = "https://services.gradle.org/distributions/gradle-4.0-bin.zip"
+    gradleVersion = '5.4.1'
 }
+

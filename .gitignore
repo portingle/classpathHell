@@ -3,7 +3,7 @@ build/*
 .idea/*
 *.iml
 .gradle/*
-demo/build/*
-demo/.idea/*
-demo/*.iml
-demo/.gradle/*
+**/build/*
+**/.idea/*
+**/*.iml
+**/.gradle/*
