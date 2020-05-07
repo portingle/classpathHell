@@ -5,6 +5,7 @@ buildscript {
 
     repositories {
         mavenLocal()
+	    mavenCentral()
     }
 }
 
@@ -12,8 +13,8 @@ repositories {
 	mavenCentral()
 }
 
-apply plugin: 'java'
 apply plugin: 'com.portingle.classpathHell'
+apply plugin: 'java'
 
 
 dependencies {
