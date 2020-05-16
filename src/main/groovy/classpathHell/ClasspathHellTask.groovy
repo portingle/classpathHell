@@ -13,6 +13,7 @@ import java.security.DigestInputStream
 import java.security.MessageDigest
 import java.util.regex.Pattern
 import java.util.zip.ZipEntry
+import java.util.zip.ZipException
 import java.util.zip.ZipFile
 
 @PackageScope
@@ -124,18 +125,37 @@ class ClasspathHellTask extends DefaultTask {
         return dupes
     }
 
-    static List<String> getResources(File jarOrDir) {
+    List<String> getResources(File location) {
         ArrayList<String> files = new ArrayList<String>()
-        if (jarOrDir.isFile()) {
-            Collection<String> resourcesInJar = getResourcesFromJarFile(jarOrDir, Pattern.compile(".*"))
-            files.addAll(resourcesInJar)
-        } else {
+        if (location.isFile()) {
+            try {
+                if (location.name.toLowerCase().endsWith(".jar") || location.name.toLowerCase().endsWith(".zip")) {
+                    // should be a valid zip/jar
+                    Collection<String> resourcesInJar = getResourcesFromJarFile(location, Pattern.compile(".*"))
+                    files.addAll(resourcesInJar)
+                } else {
+                    // might still be an archive I suppose so try unzipping anyway
+                    try {
+                        Collection<String> resourcesInJar = getResourcesFromJarFile(location, Pattern.compile(".*"))
+                        files.addAll(resourcesInJar)
+                    } catch (ZipException x) {
+                        // definitely wasn't a valid zip/jar
+                        files.addAll(location.getPath())
+                    }
+                }
+            } catch (Exception ex) {
+                logger.warn("classpathHell: error processing " + location, ex)
+                throw ex
+            }
+        } else if (location.isDirectory()) {
             // dir
-            jarOrDir.listFiles().each { File fileOrDir ->
+            location.listFiles().each { File fileOrDir ->
                 Collection<String> resourcesInJar = getResources(fileOrDir)
 
                 files.addAll(resourcesInJar)
             }
+        } else {
+            logger.warn("classpathHell: skipping location as is neither a file nor a directory " + location)
         }
         return files
     }
@@ -161,7 +181,7 @@ class ClasspathHellTask extends DefaultTask {
         }
 
         logger.warn("classpathHell: trace=" + doTrace)
-        if (doTrace && !(project.logging.getLevel() ==  null ||
+        if (doTrace && !(project.logging.getLevel() == null ||
                 project.logging.getLevel() == LogLevel.INFO ||
                 project.logging.getLevel() == LogLevel.DEBUG))
             logger.warn("classpathHell: 'trace=true' however nothing will be shown unless the log level is --info or --debug")
@@ -183,7 +203,7 @@ class ClasspathHellTask extends DefaultTask {
         }.each { Configuration conf ->
             logger.info("classpathHell: checking configuration : '" + conf.getName() + "'")
 
-            Map<String, Set<ResolvedArtifact>> counts = new HashMap()
+            Map<String, Set<ResolvedArtifact>> resourceToSource = new HashMap()
             conf.getResolvedConfiguration().getResolvedArtifacts().each {
                 ResolvedArtifact resolvedArtifact ->
 
@@ -201,12 +221,12 @@ class ClasspathHellTask extends DefaultTask {
                                 inc
                         }
 
-                        // organise found resources by resource name
+                        // collect resources into a map of resourceName to source of resource
                         includedResources.each { res ->
-                            Set<ResolvedArtifact> sources = counts.get(res)
-                            if (!counts.containsKey(res)) {
+                            Set<ResolvedArtifact> sources = resourceToSource.get(res)
+                            if (!resourceToSource.containsKey(res)) {
                                 sources = new HashSet()
-                                counts.put(res, sources)
+                                resourceToSource.put(res, sources)
                             }
                             sources.add(resolvedArtifact)
                         }
@@ -215,13 +235,13 @@ class ClasspathHellTask extends DefaultTask {
 
             }
 
-            counts.entrySet().each { Map.Entry<String, Set<ResolvedArtifact>> e ->
+            resourceToSource.entrySet().each { Map.Entry<String, Set<ResolvedArtifact>> e ->
                 String resourcePath = e.key
                 trace("checking resource : " + resourcePath)
 
-                Set<ResolvedArtifact> similarResolvedArtifacts = e.value
-                if (similarResolvedArtifacts.size() > 1) {
-                    Set<ResolvedArtifact> dupes = suppressPermittedCombinations(ext.suppressExactDupes, resourcePath, similarResolvedArtifacts, trace)
+                Set<ResolvedArtifact> sources = e.value
+                if (sources.size() > 1) {
+                    Set<ResolvedArtifact> dupes = suppressPermittedCombinations(ext.suppressExactDupes, resourcePath, sources, trace)
 
                     boolean thisHasDupes = !dupes.isEmpty()
 

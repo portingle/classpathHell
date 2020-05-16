@@ -33,7 +33,7 @@ class ClasspathHellPluginTests {
         buildFile = testProjectDir.newFile('build.gradle')
         propertiesFile = testProjectDir.newFile('gradle.properties')
         URL classpathResource = getClass().classLoader.getResource('plugin-classpath.txt')
-        if (classpathResource==null)
+        if (classpathResource == null)
             throw new RuntimeException('Cannot find plugin-classpath.txt - did the gradle build correctly create it - run the "createPluginClasspath" task?')
         pluginClasspath = classpathResource.readLines().collect { new File(it) }
     }
@@ -45,7 +45,7 @@ class ClasspathHellPluginTests {
 
         assertTrue(project.tasks.checkClasspath instanceof ClasspathHellTask)
 
-        ClasspathHellTask task = (ClasspathHellTask)project.tasks.checkClasspath
+        ClasspathHellTask task = (ClasspathHellTask) project.tasks.checkClasspath
         task.action()
     }
 
@@ -153,8 +153,12 @@ class ClasspathHellPluginTests {
             apply plugin: 'java'
 
             repositories {
+                flatDir {
+                    dirs "${project.rootDir}/tmpRepo"
+                }
                 mavenCentral()
             }
+            
             dependencies {
                 compile group: 'org.hamcrest', name: 'hamcrest-all', version: '1.3'
                 compile group: 'org.hamcrest', name: 'hamcrest-core', version: '1.3'
@@ -166,7 +170,7 @@ class ClasspathHellPluginTests {
                 trace = true
 
                 // only scan one configuration as this makes the test's verification easier                
-                configurationsToScan = [ configurations.compile]
+                //configurationsToScan = [ configurations.implementation]
                  
                 resourceExclusions = [ "META-INF/MANIFEST.MF" ]
                 
@@ -179,8 +183,13 @@ class ClasspathHellPluginTests {
         GradleRunner runner = GradleRunner.create()
                 .forwardOutput()
                 .withProjectDir(testProjectDir.getRoot())
-                .withArguments( '--info', 'checkClasspath')
+                .withArguments('--info', 'checkClasspath')
                 .withPluginClasspath(pluginClasspath)
+
+        File pd = runner.getProjectDir()
+
+        new java.io.File(pd.getAbsolutePath() + "/tmpRepo").mkdirs()
+        new java.io.File(pd.getAbsolutePath() + "/tmpRepo/ping-999.pong").write("NOT A JAR")
 
         BuildResult result = runner.build() // expect success
 
@@ -189,6 +198,67 @@ class ClasspathHellPluginTests {
         // check suppression trace
         assertTrue(output.contains("org/hamcrest/core/CombinableMatcher\$CombinableBothMatcher.class has been automatically suppressed across : [org.hamcrest:hamcrest-all:1.3, org.hamcrest:hamcrest-core:1.3]"))
         assertTrue(output.contains('org/hamcrest/core/CombinableMatcher\$CombinableBothMatcher.class #md5'))
+    }
+
+    @Test
+    void testDontUnzipNonZipFiles() {
+        buildFile << '''
+            plugins {
+                id 'com.portingle.classpathHell'
+            }
+            apply plugin: 'java'
+
+            repositories {
+                flatDir {
+                    dirs "${project.rootDir}/tmpRepo"
+                }
+                mavenCentral()
+            }
+            
+            dependencies {
+                compile('jl:ping:999') {
+                    artifact {
+                        name = 'ping'
+                        extension = 'pong'
+                        type  = 'ttt'
+                    }
+                }
+            }
+            
+            classpathHell {
+                // some additional logging; note one must also run with "--info" or "--debug" if you want to see this detail.
+                // specify the property as shown below or set the gradle property -PclasspathHell.trace=true
+                trace = true
+
+                // only scan one configuration as this makes the test's verification easier                
+                //configurationsToScan = [ configurations.implementation]
+                 
+                resourceExclusions = [ "META-INF/MANIFEST.MF" ]
+                
+                // configure automatic resolution of "benign" dupes 
+                suppressExactDupes = true 
+            }
+   
+            '''
+
+        GradleRunner runner = GradleRunner.create()
+                .forwardOutput()
+                .withProjectDir(testProjectDir.getRoot())
+                .withArguments('--info', 'checkClasspath')
+                .withPluginClasspath(pluginClasspath)
+
+        File pd = runner.getProjectDir()
+
+        new java.io.File(pd.getAbsolutePath() + "/tmpRepo").mkdirs()
+        new java.io.File(pd.getAbsolutePath() + "/tmpRepo/ping-999.pong").write("NOT A JAR")
+
+        BuildResult result = runner.build() // expect success
+
+        def output = result.getOutput()
+
+        // check suppression trace
+        assertTrue(output.contains("classpathHell: including artifact <jl:ping:999>"))
+        assertTrue(output.matches("(?s).*classpathHell:.*including resource <.*/tmpRepo/ping-999.pong>.*"))
     }
 
     @Test

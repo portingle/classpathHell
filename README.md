@@ -68,13 +68,17 @@ build.dependsOn(['checkClasspath'])
 
 It is *mandatory* to configure "configurationsToScan" to restrict the scanning to a defined set of configurations.
 
-Without this setting then all configurations are scanned, but later versions of gradle object to this as apparently certain configurations cannot be enumerated.
+Without this setting then all configurations are scanned and resolved, but later versions of gradle object to this as certain configurations cannot be enumerated.
+Gradle configurations have a property 'canBeResolved' that identifies those that we can scan safely.
+  
+At the time of writing those configurations can NOT be resolved include:   
+ 
 
 So make sure to fill this setting in as needed.
 
 ```groovy
 classpathHell {
-    configurationsToScan = [ configurations.testRuntime, configurations.implementation  ]
+    configurationsToScan = [ configurations.runtime ]
 }
 
 ```
