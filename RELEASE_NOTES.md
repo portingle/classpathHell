@@ -3,6 +3,7 @@
 - 1.7.0
 
   - Upgrade to gradle 7
+  - Better error reporting for misconfiguration of this plugin
 
 - 1.6.0
 
