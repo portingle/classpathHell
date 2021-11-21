@@ -201,7 +201,6 @@ class ClasspathHellTask extends DefaultTask {
         }
         logger.info("classpathHell: candidate configurations : " + configurations.collect(it -> it.name))
 
-        def link = "https://docs.gradle.org/current/userguide/dependency_management.html#sec:resolvable-consumable-configs"
         def nonResolvableConfigurations = configurations.findAll {
             !canBeResolved(it)
         }
@@ -213,10 +212,13 @@ class ClasspathHellTask extends DefaultTask {
 
             def hint = "classpathHell: the resolvable configurations are: " +
                     project.configurations.findAll(it -> canBeResolved(it)).collect(it -> it.name)
+            def link = "classpathHell: for more information on 'resolvable configurations' " +
+                    "see https://docs.gradle.org/current/userguide/dependency_management.html#sec:resolvable-consumable-configs"
 
             logger.error(err)
             logger.error(hint)
-            throw new InvalidUserDataException(err + "\n" + hint)
+            logger.error(link)
+            throw new InvalidUserDataException(err + "\n" + hint + "\n" + link)
         }
 
 
