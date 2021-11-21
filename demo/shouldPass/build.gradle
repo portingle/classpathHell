@@ -28,7 +28,7 @@ classpathHell {
     trace = true
 
     // only scan one configuration as this makes the test's verification easier
-    configurationsToScan = [ configurations.runtimeClasspath ]
+    configurationsToScan = [ configurations.runtimeOnly ]
 
     // suppress a genuine dupe - one that is not an exact dupe
     resourceExclusions = [ "META-INF/MANIFEST.MF" ]

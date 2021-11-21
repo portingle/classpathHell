@@ -78,7 +78,7 @@ So make sure to fill this setting in as needed.
 
 ```groovy
 classpathHell {
-    configurationsToScan = [ configurations.runtime ]
+    configurationsToScan = [ configurations.runtimeClasspath ]
 }
 
 ```
