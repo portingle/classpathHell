@@ -3,6 +3,7 @@ package classpathHell
 import groovy.transform.PackageScope
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
+import org.gradle.api.InvalidUserDataException
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ResolvedArtifact
 import org.gradle.api.artifacts.ResolvedDependency
@@ -160,11 +161,11 @@ class ClasspathHellTask extends DefaultTask {
         return files
     }
 
+    //https://docs.gradle.org/current/userguide/dependency_management.html#sec:resolvable-consumable-configs
     static boolean canBeResolved(configuration) {
         // Configuration.isCanBeResolved() has been introduced with Gradle 3.3,
         // thus we need to check for the method's existence first
-        configuration.metaClass.respondsTo(configuration, "isCanBeResolved") ?
-                configuration.isCanBeResolved() : true
+        configuration.metaClass.respondsTo(configuration, "isCanBeResolved") ? configuration.isCanBeResolved() : true
     }
 
     @TaskAction
@@ -195,12 +196,31 @@ class ClasspathHellTask extends DefaultTask {
 
         List<Configuration> configurations = ext.configurationsToScan
         if (!configurations) {
-            configurations = this.project.getConfigurations().toList()
+            logger.info("classpathHell: no configurationsToScan specified so will scan all configurations ")
+            configurations = this.project.getConfigurations().findAll(it -> canBeResolved(it)).toList()
+        }
+        logger.info("classpathHell: candidate configurations : " + configurations.collect(it -> it.name))
+
+        def link = "https://docs.gradle.org/current/userguide/dependency_management.html#sec:resolvable-consumable-configs"
+        def nonResolvableConfigurations = configurations.findAll {
+            !canBeResolved(it)
         }
 
-        configurations.findAll {
-            canBeResolved(it)
-        }.each { Configuration conf ->
+        if (nonResolvableConfigurations.size() > 0) {
+            def err = nonResolvableConfigurations.collect(it ->
+                    ("classpathHell: configuration '" + it.name + "' is not resolvable")
+            ).join("\n")
+
+            def hint = "classpathHell: the resolvable configurations are: " +
+                    project.configurations.findAll(it -> canBeResolved(it)).collect(it -> it.name)
+
+            logger.error(err)
+            logger.error(hint)
+            throw new InvalidUserDataException(err + "\n" + hint)
+        }
+
+
+        configurations.each { Configuration conf ->
             logger.info("classpathHell: checking configuration : '" + conf.getName() + "'")
 
             Map<String, Set<ResolvedArtifact>> resourceToSource = new HashMap()

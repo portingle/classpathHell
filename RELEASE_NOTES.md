@@ -1,5 +1,13 @@
 # RELEASE NOTES
 
+- 1.7.0
+
+  - Upgrade to gradle 7
+
+- 1.6.0
+
+  - Upgrade to gradle 6
+
 - 1.5
 
   - like 1.4 but using a different hashed

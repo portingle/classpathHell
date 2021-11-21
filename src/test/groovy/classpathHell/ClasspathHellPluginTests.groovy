@@ -11,11 +11,11 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runners.MethodSorters
 
+import java.nio.file.Paths
+
 import static org.gradle.testkit.runner.TaskOutcome.FAILED
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
-import static org.junit.Assert.assertEquals
-import static org.junit.Assert.assertFalse
-import static org.junit.Assert.assertTrue
+import static org.junit.Assert.*
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 class ClasspathHellPluginTests {
@@ -120,12 +120,13 @@ class ClasspathHellPluginTests {
                 mavenCentral()
             }
             dependencies {
-                compile group: 'org.hamcrest', name: 'hamcrest-all', version: '1.3'
-                compile group: 'org.hamcrest', name: 'hamcrest-core', version: '1.3'
+                implementation group: 'org.hamcrest', name: 'hamcrest-all', version: '1.3'
+                implementation group: 'org.hamcrest', name: 'hamcrest-core', version: '1.3'
             }
             
             classpathHell {
-                configurationsToScan = [ configurations.compile ]
+                trace = true
+                configurationsToScan = [ configurations.compileClasspath ]
             }
    
             '''
@@ -133,15 +134,50 @@ class ClasspathHellPluginTests {
         GradleRunner runner = GradleRunner.create()
                 .forwardOutput()
                 .withProjectDir(testProjectDir.getRoot())
-                .withArguments('checkClasspath')
+                .withArguments("--info", 'checkClasspath')
                 .withPluginClasspath(pluginClasspath)
 
         BuildResult result = runner.buildAndFail()
 
         def output = result.getOutput()
-        assertTrue(output.contains("configuration 'compile' contains duplicate resource: org/hamcrest/core/CombinableMatcher"))
+        assertTrue(output.contains("configuration 'compileClasspath' contains duplicate resource: org/hamcrest/core/CombinableMatcher"))
         assertEquals(result.task(":checkClasspath").getOutcome(), FAILED)
+    }
 
+    @Test
+    void testReportsNonResolvableProfile() {
+        buildFile << '''
+            plugins {
+                id 'com.portingle.classpathHell'
+            }
+            apply plugin: 'java'
+
+            repositories {
+                mavenCentral()
+            }
+            dependencies {
+                implementation group: 'org.hamcrest', name: 'hamcrest-all', version: '1.3'
+                implementation group: 'org.hamcrest', name: 'hamcrest-core', version: '1.3'
+            }
+            
+            classpathHell {
+                trace = true
+                configurationsToScan = [ configurations.implementation ]
+            }
+   
+            '''
+
+        GradleRunner runner = GradleRunner.create()
+                .forwardOutput()
+                .withProjectDir(testProjectDir.getRoot())
+                .withArguments("--info", 'checkClasspath')
+                .withPluginClasspath(pluginClasspath)
+
+        BuildResult result = runner.buildAndFail()
+
+        def output = result.getOutput()
+        assertTrue(output.contains("configuration 'implementation' is not resolvable"))
+        assertEquals(result.task(":checkClasspath").getOutcome(), FAILED)
     }
 
     @Test
@@ -160,8 +196,8 @@ class ClasspathHellPluginTests {
             }
             
             dependencies {
-                compile group: 'org.hamcrest', name: 'hamcrest-all', version: '1.3'
-                compile group: 'org.hamcrest', name: 'hamcrest-core', version: '1.3'
+                implementation group: 'org.hamcrest', name: 'hamcrest-all', version: '1.3'
+                implementation group: 'org.hamcrest', name: 'hamcrest-core', version: '1.3'
             }
             
             classpathHell {
@@ -170,7 +206,7 @@ class ClasspathHellPluginTests {
                 trace = true
 
                 // only scan one configuration as this makes the test's verification easier                
-                //configurationsToScan = [ configurations.implementation]
+                //configurationsToScan = [ configurations.compileClasspath]
                  
                 resourceExclusions = [ "META-INF/MANIFEST.MF" ]
                 
@@ -216,7 +252,7 @@ class ClasspathHellPluginTests {
             }
             
             dependencies {
-                compile('jl:ping:999') {
+                implementation('jl:ping:999') {
                     artifact {
                         name = 'ping'
                         extension = 'pong'
@@ -231,7 +267,7 @@ class ClasspathHellPluginTests {
                 trace = true
 
                 // only scan one configuration as this makes the test's verification easier                
-                //configurationsToScan = [ configurations.implementation]
+                //configurationsToScan = [ configurations.compileClasspath]
                  
                 resourceExclusions = [ "META-INF/MANIFEST.MF" ]
                 
@@ -249,8 +285,8 @@ class ClasspathHellPluginTests {
 
         File pd = runner.getProjectDir()
 
-        new java.io.File(pd.getAbsolutePath() + "/tmpRepo").mkdirs()
-        new java.io.File(pd.getAbsolutePath() + "/tmpRepo/ping-999.pong").write("NOT A JAR")
+        Paths.get(pd.getAbsolutePath(), "tmpRepo").toFile().mkdirs()
+        Paths.get(pd.getAbsolutePath(), "tmpRepo", "ping-999.pong").write("NOT A JAR")
 
         BuildResult result = runner.build() // expect success
 
@@ -258,7 +294,7 @@ class ClasspathHellPluginTests {
 
         // check suppression trace
         assertTrue(output.contains("classpathHell: including artifact <jl:ping:999>"))
-        assertTrue(output.matches("(?s).*classpathHell:.*including resource <.*/tmpRepo/ping-999.pong>.*"))
+        assertTrue(output.matches("(?s).*classpathHell:.*including resource <.*tmpRepo.*ping-999.pong>.*"))
     }
 
     @Test
@@ -290,12 +326,12 @@ class ClasspathHellPluginTests {
                 resourceExclusions = [ ".*/BaseMatcher.class" ]
    
                 // scan a only one config so that test logs less
-                configurationsToScan = [ configurations.compile]
+                configurationsToScan = [ configurations.compileClasspath]
                }
 
             dependencies {
-                compile group: 'org.hamcrest', name: 'hamcrest-all', version: '1.3'
-                compile group: 'org.hamcrest', name: 'hamcrest-core', version: '1.3'
+                implementation group: 'org.hamcrest', name: 'hamcrest-all', version: '1.3'
+                implementation group: 'org.hamcrest', name: 'hamcrest-core', version: '1.3'
             }
             '''
 

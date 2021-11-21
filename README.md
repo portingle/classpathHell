@@ -56,8 +56,8 @@ apply plugin: 'java'
 
 // introduce some deliberate duplication
 dependencies {
-    compile group: 'org.hamcrest', name: 'hamcrest-all', version: '1.3'
-    compile group: 'org.hamcrest', name: 'hamcrest-core', version: '1.3'
+    implementation group: 'org.hamcrest', name: 'hamcrest-all', version: '1.3'
+    implementation group: 'org.hamcrest', name: 'hamcrest-core', version: '1.3'
 }
 
 // link this plugin into the build cycle
