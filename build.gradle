@@ -1,4 +1,6 @@
 // .\gradlew clean build publishToSonatype closeAndReleaseSonatypeStagingRepository
+// use publishToMavenLocal to install to the local repo for testing
+
 // to see staged builds login and go to https://oss.sonatype.org/#stagingRepositories
 
 
