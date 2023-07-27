@@ -1,3 +1,4 @@
+// ADDITIONALLY THIS DEMO USES THE OLD STYLE GRADLE DEP apply plugin
 
 // expect failure from this build script because hamcrest-all contains hamcrest-core
 // so there are lots of dupe'd resources
@@ -15,7 +16,7 @@ buildscript {
     }
 
     dependencies {
-        classpath "com.portingle:classpath-hell:1.7.0"
+        classpath "com.portingle:classpath-hell:1.8"
     }
 }
 

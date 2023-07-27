@@ -1,20 +1,30 @@
+// ADDITIONALLY THIS DEMO USES THE NEW STYLE GRADLE DEP plugin id
+
 buildscript {
-    dependencies {
-        classpath 'com.portingle:classpath-hell:1.7.0'
-    }
+// OLD STYLE DEP
+//    dependencies {
+//        classpath 'com.portingle:classpath-hell:1.8'
+//    }
 
     repositories {
         mavenLocal()
-	    mavenCentral()
+        mavenCentral()
     }
 }
 
-repositories {
-	mavenCentral()
+plugins {
+    // NEW STYLE DEP
+    id('com.portingle.classpath-hell').version("1.8")
 }
 
-apply plugin: 'com.portingle.classpathHell'
+repositories {
+    mavenCentral()
+}
+
 apply plugin: 'java'
+
+// OLD STYLE DEP
+//apply plugin: 'com.portingle.classpathHell'
 
 
 dependencies {
@@ -28,10 +38,10 @@ classpathHell {
     trace = true
 
     // only scan one configuration as this makes the test's verification easier
-    configurationsToScan = [ configurations.runtimeClasspath ]
+    configurationsToScan = [configurations.runtimeClasspath]
 
     // suppress a genuine dupe - one that is not an exact dupe
-    resourceExclusions = [ "META-INF/MANIFEST.MF" ]
+    resourceExclusions = ["META-INF/MANIFEST.MF"]
 
     // configure automatic resolution of "benign" dupes
     suppressExactDupes = true

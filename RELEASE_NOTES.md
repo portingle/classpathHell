@@ -1,5 +1,9 @@
 # RELEASE NOTES
 
+- 1.8
+
+  - Enabled use of the newer gradle "plugin id" syntax
+
 - 1.7.0
 
   - Upgrade to gradle 7

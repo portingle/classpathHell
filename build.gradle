@@ -1,5 +1,9 @@
-// .\gradlew clean build publishToSonatype closeAndReleaseSonatypeStagingRepository
-// use publishToMavenLocal to install to the local repo for testing
+// RELEASNG ...
+// place gradle.properties dir in c:\users\johnl\gradlerelease\
+// .\gradlew -g c:\users\johnl\gradlerelease clean build publishToSonatype closeAndReleaseSonatypeStagingRepository
+
+// TESTING LOCALLY - to install to the local repo for testing
+// .\gradlew publishToMavenLocal
 
 // to see staged builds login and go to https://oss.sonatype.org/#stagingRepositories
 
@@ -7,15 +11,16 @@
 plugins {
     id("io.github.gradle-nexus.publish-plugin").version("1.0.0")
     id 'java-library'
+    id 'java-gradle-plugin'
+    id 'groovy'
 }
 
-apply plugin: 'groovy'
 apply plugin: 'maven-publish'
 apply plugin: 'signing'
 
 group 'com.portingle'
 archivesBaseName = "classpath-hell"
-version '1.7.0'
+version '1.8'
 
 repositories {
     mavenCentral()
@@ -83,7 +88,40 @@ task createPluginClasspath {
     }
 }
 
+task runDemoPass(type: Exec) {
+    dependsOn(["publishToMavenLocal"])
+
+    workingDir 'demo/shouldPass'
+    commandLine 'cmd', '/c', '..\\..\\gradlew', 'clean', 'build', '-i'
+    doFirst {
+        println("EXEC PASSING DEMO")
+    }
+    doLast {
+        println("\nEXEC END")
+    }
+}
+task runDemoFail(type: Exec) {
+    dependsOn(["publishToMavenLocal"])
+
+    workingDir 'demo/shouldFail'
+    commandLine 'cmd', '/c', '..\\..\\gradlew', 'clean', 'build', '-i'
+
+    ignoreExitValue true
+
+    doFirst {
+        println("EXEC FAILING DEMO")
+    }
+    doLast {
+        if(executionResult.get().exitValue == 0) {
+            System.err.println("\nEXEC END - DID NOT GET THE EXPECTED FAILURE!!!")
+            throw new GradleException("demo at '" + workingDir + "' should have failed but did not fail !!!!!!!")
+        }
+        println("\nEXEC END - WITH EXPECTED FAILURE OF SCAN")
+    }
+}
+
 test.dependsOn(['createPluginClasspath'])
+test.finalizedBy(['runDemoPass','runDemoFail'])
 
 // consider using the Gradle Nexus Staging Maven as this avoids need to use the NExus gui to close and release the stage artifact.
 // if the sonatypeUsername is provided by the gradle properties then a release is enabled
@@ -101,8 +139,10 @@ if (project.properties.containsKey("sonatypeUsername")) {
 
 publishing {
     publications {
-        mavenJava(MavenPublication) {
-                from components.java
+        // Ues pluginMaven - https://github.com/gradle/gradle/issues/10384
+        // To address...
+        // Multiple publications with coordinates 'com.portingle:classpath-hell:1.8' are published to repository 'mavenLocal'. The publications will overwrite each other!
+        pluginMaven(MavenPublication) {
 
             pom {
                 name = 'classpath-hell'
@@ -180,6 +220,17 @@ tasks.withType(GenerateModuleMetadata) {
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
+
+
+gradlePlugin {
+    // Define the plugin
+    plugins {
+        classpathHell {
+            id = 'com.portingle.classpath-hell'
+            implementationClass = 'classpathHell.ClasspathHellPlugin'
+        }
+    }
+}
 
 
 

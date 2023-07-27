@@ -1,2 +1,8 @@
-rootProject.name = 'classpathHell-sample'
+pluginManagement {
+    repositories {
+        mavenLocal() //  allows picking local maven versions of classpath-hell
+        gradlePluginPortal()
+    }
+}
 
+rootProject.name = 'classpathHell-sample'
