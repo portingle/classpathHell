@@ -95,40 +95,45 @@ if (project.properties.containsKey("sonatypeUsername")) {
     signing {
         sign configurations.archives
     }
+} else {
+    println("signing for release is disabled - 'sonatypeUsername' is undefined")
+}
 
-    publishing {
-        publications {
-            mavenJava(MavenPublication) {
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
                 from components.java
 
-                pom {
-                    name = 'classpath-hell'
-                    packaging = 'jar'
+            pom {
+                name = 'classpath-hell'
+                packaging = 'jar'
 
-                    // optionally artifactId can be defined here
-                    description = 'ClasspathHell Gradle Plugin detects duplicate resources on the classpath'
-                    url = 'https://github.com/portingle/classpathHell'
+                // optionally artifactId can be defined here
+                description = 'ClasspathHell Gradle Plugin detects duplicate resources on the classpath'
+                url = 'https://github.com/portingle/classpathHell'
 
-                    scm {
-                        connection = 'scm:git@github.com:portingle/classpathHell.git'
-                        developerConnection = 'scm:git@github.com:portingle/classpathHell.git'
-                        url = 'scm:git@github.com:portingle/classpathHell.git'
-                    }
+                scm {
+                    connection = 'scm:git@github.com:portingle/classpathHell.git'
+                    developerConnection = 'scm:git@github.com:portingle/classpathHell.git'
+                    url = 'scm:git@github.com:portingle/classpathHell.git'
+                }
 
-                    licenses {
-                        license {
-                            name = 'The MIT Licence (MIT)'
-                            url = 'https://opensource.org/licenses/MIT'
-                        }
-                    }
-
-                    developers {
-                        developer {
-                            id = 'Johnlon'
-                            name = 'John Lonergan'
-                        }
+                licenses {
+                    license {
+                        name = 'The MIT Licence (MIT)'
+                        url = 'https://opensource.org/licenses/MIT'
                     }
                 }
+
+                developers {
+                    developer {
+                        id = 'Johnlon'
+                        name = 'John Lonergan'
+                    }
+                }
+            }
+
+            if (project.properties.containsKey("sonatypeUsername")) {
 
                 // create the signed artifacts
                 project.tasks.signArchives.signatureFiles.each {
@@ -142,6 +147,7 @@ if (project.properties.containsKey("sonatypeUsername")) {
                         extension = 'jar.asc'
                     }
                 }
+
                 pom.withXml {
                     def pomFile = file("${project.buildDir}/generated-pom.xml")
                     writeTo(pomFile)
@@ -151,20 +157,16 @@ if (project.properties.containsKey("sonatypeUsername")) {
                         extension = 'pom.asc'
                     }
                 }
-
             }
         }
     }
+}
 
-    nexusPublishing {
-        repositories {
-            // relies on sonatypeUsername/sonatypePassword being defined in "{gradle_home}/gradle.properties"
-            sonatype()
-        }
+nexusPublishing {
+    repositories {
+        // relies on sonatypeUsername/sonatypePassword being defined in "{gradle_home}/gradle.properties"
+        sonatype()
     }
-
-} else {
-    println("uploadArchives for release is disabled - 'sonatypeUsername' is undefined")
 }
 
 

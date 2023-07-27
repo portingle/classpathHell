@@ -4,6 +4,9 @@
 
   - Upgrade to gradle 7
   - Better error reporting for misconfiguration of this plugin
+  - Tested with Java 18 and Gradle 7 
+  - Fixed   ./gradlew   publishToMavenLocal
+
 
 - 1.6.0
 
