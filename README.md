@@ -45,14 +45,23 @@ buildscript {
         mavenCentral()
     }
 
-    dependencies {
-        // check maven central for the latest release
-        classpath "com.portingle:classpath-hell:1.4"
-    }
+    // OLD STYLE DEPENDENCY
+    // dependencies {
+    //    // check maven central for the latest release
+    //    classpath "com.portingle:classpath-hell:1.8"
+    //}
 }
 
-apply plugin: 'com.portingle.classpathHell'
+
+plugins {
+    // NEW STYLE PLUGIN
+    id('com.portingle.classpath-hell').version("1.8")
+}
+
 apply plugin: 'java'
+
+// OLD STYLE DEPENDENCY
+// apply plugin: 'com.portingle.classpathHell'
 
 // introduce some deliberate duplication
 dependencies {

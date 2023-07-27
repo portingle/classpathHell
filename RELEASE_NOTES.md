@@ -2,7 +2,7 @@
 
 - 1.8
 
-  - Enabled use of the newer gradle "plugin id" syntax
+  - Enabled use of the newer gradle "plugin id" syntax - see the README
 
 - 1.7.0
 
