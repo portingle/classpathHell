@@ -63,7 +63,8 @@ apply plugin: 'java'
 // OLD STYLE DEPENDENCY
 // apply plugin: 'com.portingle.classpathHell'
 
-// introduce some deliberate duplication
+// introduce some deliberate BAD deps with dupes
+
 dependencies {
     implementation group: 'org.hamcrest', name: 'hamcrest-all', version: '1.3'
     implementation group: 'org.hamcrest', name: 'hamcrest-core', version: '1.3'
