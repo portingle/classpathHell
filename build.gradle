@@ -108,7 +108,7 @@ task runDemoPass(type: Exec) {
 task runDemoFail(type: Exec) {
     dependsOn(["publishToMavenLocal"])
 
-    workingDir 'demo/shouldFail'
+    workingDir 'demo/shouldDetectDupes'
     commandLine 'cmd', '/c', '..\\..\\gradlew', 'clean', 'build', '-i'
 
     ignoreExitValue true
