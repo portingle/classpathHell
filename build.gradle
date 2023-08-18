@@ -1,22 +1,27 @@
 // RELEASNG ...
-// place gradle.properties dir in c:\users\johnl\gradlerelease\
-// .\gradlew -g c:\users\johnl\gradlerelease clean build publishToSonatype closeAndReleaseSonatypeStagingRepository
+// SETUP:   place gradle.properties dir in c:\users\johnl\gradlerelease\
+// RELEASE: .\gradlew -g c:\users\johnl\gradlerelease clean build publishToSonatype closeAndReleaseSonatypeStagingRepository
+// VERIFY:  https://repo.maven.apache.org/maven2/com/portingle/classpath-hell/
+// ALSO to see staged builds login and go to https://oss.sonatype.org/#stagingRepositories
+
 
 // TESTING LOCALLY - to install to the local repo for testing
 // .\gradlew publishToMavenLocal
 
-// to see staged builds login and go to https://oss.sonatype.org/#stagingRepositories
 
 
 plugins {
-    id("io.github.gradle-nexus.publish-plugin").version("1.0.0")
-    id 'java-library'
-    id 'java-gradle-plugin'
+    id 'com.gradle.plugin-publish' version '1.2.0'
+
+//    id("io.github.gradle-nexus.publish-plugin").version("1.0.0")
+//    id 'java-gradle-plugin'
     id 'groovy'
+    id 'signing'
+
 }
 
-apply plugin: 'maven-publish'
-apply plugin: 'signing'
+//apply plugin: 'maven-publish'
+//apply plugin: 'signing'
 
 group 'com.portingle'
 archivesBaseName = "classpath-hell"
@@ -128,21 +133,23 @@ test.finalizedBy(['runDemoPass','runDemoFail'])
 
 if (project.properties.containsKey("sonatypeUsername")) {
 
-    apply plugin: 'signing'
+//    apply plugin: 'signing'
 
-    signing {
-        sign configurations.archives
-    }
+//    signing {
+//        sign configurations.archives
+//    }
 } else {
     println("signing for release is disabled - 'sonatypeUsername' is undefined")
 }
+
 
 publishing {
     publications {
         // Ues pluginMaven - https://github.com/gradle/gradle/issues/10384
         // To address...
         // Multiple publications with coordinates 'com.portingle:classpath-hell:1.8' are published to repository 'mavenLocal'. The publications will overwrite each other!
-        pluginMaven(MavenPublication) {
+        classpathPlugin(MavenPublication) {
+            from components.java
 
             pom {
                 name = 'classpath-hell'
@@ -176,58 +183,65 @@ publishing {
             if (project.properties.containsKey("sonatypeUsername")) {
 
                 // create the signed artifacts
-                project.tasks.signArchives.signatureFiles.each {
-                    artifact(it) {
-                        def matcher = it.file =~ /-(sources|javadoc)\.jar\.asc$/
-                        if (matcher.find()) {
-                            classifier = matcher.group(1)
-                        } else {
-                            classifier = null
-                        }
-                        extension = 'jar.asc'
-                    }
-                }
+//                project.tasks.signArchives.signatureFiles.each {
+//                    artifact(it) {
+//                        def matcher = it.file =~ /-(sources|javadoc)\.jar\.asc$/
+//                        if (matcher.find()) {
+//                            classifier = matcher.group(1)
+//                        } else {
+//                            classifier = null
+//                        }
+//                        extension = 'jar.asc'
+//                    }
+//                }
 
-                pom.withXml {
-                    def pomFile = file("${project.buildDir}/generated-pom.xml")
-                    writeTo(pomFile)
-                    def pomAscFile = signing.sign(pomFile).signatureFiles[0]
-                    artifact(pomAscFile) {
-                        classifier = null
-                        extension = 'pom.asc'
-                    }
-                }
+//                pom.withXml {
+//                    def pomFile = file("${project.buildDir}/generated-pom.xml")
+//                    writeTo(pomFile)
+//                    def pomAscFile = signing.sign(pomFile).signatureFiles[0]
+//                    artifact(pomAscFile) {
+//                        classifier = null
+//                        extension = 'pom.asc'
+//                    }
+//                }
             }
         }
     }
 }
 
-nexusPublishing {
-    repositories {
-        // relies on sonatypeUsername/sonatypePassword being defined in "{gradle_home}/gradle.properties"
-        sonatype()
-    }
-}
+//nexusPublishing {
+//    repositories {
+//        // relies on sonatypeUsername/sonatypePassword being defined in "{gradle_home}/gradle.properties"
+//        sonatype()
+//    }
+//}
 
 
 /* Avoid this issue when publishing by NOT sending a geadle "module" file
 Missing Signature: '/com/portingle/slf4jtesting/1.2.0/slf4jtesting-1.2.0.module.asc' does not exist for 'slf4jtesting-1.2.0.module'
 Would be better to figure out how to sign it.
 */
-tasks.withType(GenerateModuleMetadata) {
-    enabled = false
-}
+//tasks.withType(GenerateModuleMetadata) {
+//    enabled = false
+//}
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
 
 
 gradlePlugin {
+    website = 'https://github.com/portingle/classpathHell'
+    vcsUrl = 'https://github.com/portingle/classpathHell.git'
+
     // Define the plugin
     plugins {
-        classpathHell {
+        classpathhellPlugin {
             id = 'com.portingle.classpath-hell'
             implementationClass = 'classpathHell.ClasspathHellPlugin'
+            displayName = 'ClasspathHell Gradle Plugin detects duplicate resources on the classpath'
+            description = 'ClasspathHell Gradle Plugin detects duplicate resources on the classpath'
+            tags.addAll(['testing', 'classpath'])
+
         }
     }
 }

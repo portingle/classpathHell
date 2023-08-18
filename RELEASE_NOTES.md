@@ -3,6 +3,8 @@
 - 1.8
 
   - Enabled use of the newer gradle "plugin id" syntax - see the README
+  - Upgrade to gradle 8
+
 
 - 1.7.0
 
