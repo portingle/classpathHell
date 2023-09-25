@@ -1,5 +1,10 @@
 # RELEASE NOTES
 
+- 1.9
+
+  - Changed the log level of _logger.warn("classpathHell: trace=" + doTrace)_ to info so it doesn't clutter the console.
+
+
 - 1.8
 
   - Enabled use of the newer gradle "plugin id" syntax - see the README

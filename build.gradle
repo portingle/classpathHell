@@ -12,16 +12,10 @@
 
 plugins {
     id 'com.gradle.plugin-publish' version '1.2.0'
-
-//    id("io.github.gradle-nexus.publish-plugin").version("1.0.0")
-//    id 'java-gradle-plugin'
     id 'groovy'
     id 'signing'
 
 }
-
-//apply plugin: 'maven-publish'
-//apply plugin: 'signing'
 
 group 'com.portingle'
 archivesBaseName = "classpath-hell"
@@ -63,12 +57,6 @@ test {
         showCauses = true
         showStandardStreams = true
 
-        // set options for log level DEBUG
-//        debug {
-//            events "skipped", "failed"
-//            exceptionFormat "full"
-//        }
-
         // remove standard output/error logging from --info builds
         // by assigning only 'failed' and 'skipped' events
         info.events = ["failed", "skipped"]
@@ -82,7 +70,6 @@ task createPluginClasspath {
     // for intellij which uses ./out rather than ./build
 
     inputs.files sourceSets.test.runtimeClasspath
-    //outputs.dir outputDir
     outputs.files(buildRes, outRes)
 
     doLast {
@@ -128,20 +115,6 @@ task runDemoFail(type: Exec) {
 test.dependsOn(['createPluginClasspath'])
 test.finalizedBy(['runDemoPass','runDemoFail'])
 
-// consider using the Gradle Nexus Staging Maven as this avoids need to use the NExus gui to close and release the stage artifact.
-// if the sonatypeUsername is provided by the gradle properties then a release is enabled
-
-if (project.properties.containsKey("sonatypeUsername")) {
-
-//    apply plugin: 'signing'
-
-//    signing {
-//        sign configurations.archives
-//    }
-} else {
-    println("signing for release is disabled - 'sonatypeUsername' is undefined")
-}
-
 
 publishing {
     publications {
@@ -180,50 +153,9 @@ publishing {
                 }
             }
 
-            if (project.properties.containsKey("sonatypeUsername")) {
-
-                // create the signed artifacts
-//                project.tasks.signArchives.signatureFiles.each {
-//                    artifact(it) {
-//                        def matcher = it.file =~ /-(sources|javadoc)\.jar\.asc$/
-//                        if (matcher.find()) {
-//                            classifier = matcher.group(1)
-//                        } else {
-//                            classifier = null
-//                        }
-//                        extension = 'jar.asc'
-//                    }
-//                }
-
-//                pom.withXml {
-//                    def pomFile = file("${project.buildDir}/generated-pom.xml")
-//                    writeTo(pomFile)
-//                    def pomAscFile = signing.sign(pomFile).signatureFiles[0]
-//                    artifact(pomAscFile) {
-//                        classifier = null
-//                        extension = 'pom.asc'
-//                    }
-//                }
-            }
         }
     }
 }
-
-//nexusPublishing {
-//    repositories {
-//        // relies on sonatypeUsername/sonatypePassword being defined in "{gradle_home}/gradle.properties"
-//        sonatype()
-//    }
-//}
-
-
-/* Avoid this issue when publishing by NOT sending a geadle "module" file
-Missing Signature: '/com/portingle/slf4jtesting/1.2.0/slf4jtesting-1.2.0.module.asc' does not exist for 'slf4jtesting-1.2.0.module'
-Would be better to figure out how to sign it.
-*/
-//tasks.withType(GenerateModuleMetadata) {
-//    enabled = false
-//}
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
@@ -245,7 +177,3 @@ gradlePlugin {
         }
     }
 }
-
-
-
-
