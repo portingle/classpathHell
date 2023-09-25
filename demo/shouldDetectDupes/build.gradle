@@ -21,7 +21,7 @@ buildscript {
     }
 
     dependencies {
-        classpath "com.portingle:classpath-hell:1.8"
+        classpath "com.portingle:classpath-hell:1.9"
     }
 }
 

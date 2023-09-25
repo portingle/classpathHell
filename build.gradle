@@ -1,6 +1,8 @@
 // RELEASNG ...
-// SETUP:   place gradle.properties dir in c:\users\johnl\gradlerelease\
-// RELEASE: .\gradlew -g c:\users\johnl\gradlerelease clean build publishToSonatype closeAndReleaseSonatypeStagingRepository
+// DO IT IN WINDOWS
+// UPDATE build.gradle: version '1.9'
+// SETUP:   place gradle.properties in c:\users\johnl\gradlerelease\
+// RELEASE: .\gradlew -g c:\users\johnl\gradlerelease publishPlugins [--validate-only]
 // VERIFY:  https://repo.maven.apache.org/maven2/com/portingle/classpath-hell/
 // ALSO to see staged builds login and go to https://oss.sonatype.org/#stagingRepositories
 
@@ -19,7 +21,7 @@ plugins {
 
 group 'com.portingle'
 archivesBaseName = "classpath-hell"
-version '1.8'
+version '1.9'
 
 repositories {
     mavenCentral()

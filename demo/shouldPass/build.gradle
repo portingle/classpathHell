@@ -3,7 +3,7 @@
 buildscript {
 // OLD STYLE DEP
 //    dependencies {
-//        classpath 'com.portingle:classpath-hell:1.8'
+//        classpath 'com.portingle:classpath-hell:1.9'
 //    }
 
     repositories {
@@ -14,7 +14,7 @@ buildscript {
 
 plugins {
     // NEW STYLE DEP
-    id('com.portingle.classpath-hell').version("1.8")
+    id('com.portingle.classpath-hell').version("1.9")
 }
 
 repositories {

@@ -48,14 +48,14 @@ buildscript {
     // OLD STYLE DEPENDENCY
     // dependencies {
     //    // check maven central for the latest release
-    //    classpath "com.portingle:classpath-hell:1.8"
+    //    classpath "com.portingle:classpath-hell:1.9"
     //}
 }
 
 
 plugins {
     // NEW STYLE PLUGIN
-    id('com.portingle.classpath-hell').version("1.8")
+    id('com.portingle.classpath-hell').version("1.9")
 }
 
 apply plugin: 'java'
