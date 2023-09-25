@@ -181,7 +181,7 @@ class ClasspathHellTask extends DefaultTask {
             doTrace = true
         }
 
-        logger.warn("classpathHell: trace=" + doTrace)
+        logger.info("classpathHell: trace=" + doTrace)
         if (doTrace && !(project.logging.getLevel() == null ||
                 project.logging.getLevel() == LogLevel.INFO ||
                 project.logging.getLevel() == LogLevel.DEBUG))
