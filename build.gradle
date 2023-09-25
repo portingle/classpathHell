@@ -3,8 +3,7 @@
 // UPDATE build.gradle: version '1.9'
 // SETUP:   place gradle.properties in c:\users\johnl\gradlerelease\
 // RELEASE: .\gradlew -g c:\users\johnl\gradlerelease publishPlugins [--validate-only]
-// VERIFY:  https://repo.maven.apache.org/maven2/com/portingle/classpath-hell/
-// ALSO to see staged builds login and go to https://oss.sonatype.org/#stagingRepositories
+// VERIFY:  https://plugins.gradle.org/plugin/com.portingle.classpath-hell
 
 
 // TESTING LOCALLY - to install to the local repo for testing
