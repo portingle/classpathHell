@@ -20,7 +20,7 @@ plugins {
 
 group 'com.portingle'
 archivesBaseName = "classpath-hell"
-version '1.9'
+version '1.10'
 
 repositories {
     mavenCentral()
@@ -32,7 +32,7 @@ dependencies {
 
     testImplementation(gradleTestKit())
 
-    testImplementation group: 'junit', name: 'junit', version: '4.11'
+    testImplementation group: 'junit', name: 'junit', version: '4.13.1'
 }
 
 

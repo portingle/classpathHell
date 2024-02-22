@@ -8,6 +8,8 @@ import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ResolvedArtifact
 import org.gradle.api.artifacts.ResolvedDependency
 import org.gradle.api.logging.LogLevel
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.OutputFiles
 import org.gradle.api.tasks.TaskAction
 
 import java.security.DigestInputStream
@@ -194,33 +196,8 @@ class ClasspathHellTask extends DefaultTask {
 
         boolean hadDupes = false
 
-        List<Configuration> configurations = ext.configurationsToScan
-        if (!configurations) {
-            logger.info("classpathHell: no configurationsToScan specified so will scan all configurations ")
-            configurations = this.project.getConfigurations().findAll(it -> canBeResolved(it)).toList()
-        }
-        logger.info("classpathHell: candidate configurations : " + configurations.collect(it -> it.name))
-
-        def nonResolvableConfigurations = configurations.findAll {
-            !canBeResolved(it)
-        }
-
-        if (nonResolvableConfigurations.size() > 0) {
-            def err = nonResolvableConfigurations.collect(it ->
-                    ("classpathHell: configuration '" + it.name + "' is not resolvable")
-            ).join("\n")
-
-            def hint = "classpathHell: the resolvable configurations are: " +
-                    project.configurations.findAll(it -> canBeResolved(it)).collect(it -> it.name)
-            def link = "classpathHell: for more information on 'resolvable configurations' " +
-                    "see https://docs.gradle.org/current/userguide/dependency_management.html#sec:resolvable-consumable-configs"
-
-            logger.error(err)
-            logger.error(hint)
-            logger.error(link)
-            throw new InvalidUserDataException(err + "\n" + hint + "\n" + link)
-        }
-
+        def configurations = getConfigurations(ext)
+        checkThatAllConfigurationsAreResolvable(configurations)
 
         configurations.each { Configuration conf ->
             logger.info("classpathHell: checking configuration : '" + conf.getName() + "'")
@@ -286,4 +263,68 @@ class ClasspathHellTask extends DefaultTask {
         if (hadDupes)
             throw new GradleException("Duplicate resources detected")
     }
+
+    private List<Configuration> getConfigurations(ClasspathHellPluginExtension ext) {
+        def configurations = ext.configurationsToScan
+        if (!configurations) {
+            logger.info("classpathHell: no configurationsToScan specified so will scan all configurations ")
+            configurations = this.project.getConfigurations().findAll(it -> canBeResolved(it)).toList()
+        }
+        logger.info("classpathHell: candidate configurations : " + configurations.collect(it -> it.name))
+        return configurations
+    }
+
+    private checkThatAllConfigurationsAreResolvable(List<Configuration> configurations) {
+        def nonResolvableConfigurations = configurations.findAll {
+            !canBeResolved(it)
+        }
+
+        if (nonResolvableConfigurations.size() > 0) {
+            def err = nonResolvableConfigurations.collect(it ->
+                    ("classpathHell: configuration '" + it.name + "' is not resolvable")
+            ).join("\n")
+
+            def hint = "classpathHell: the resolvable configurations are: " +
+                    project.configurations.findAll(it -> canBeResolved(it)).collect(it -> it.name)
+            def link = "classpathHell: for more information on 'resolvable configurations' " +
+                    "see https://docs.gradle.org/current/userguide/dependency_management.html#sec:resolvable-consumable-configs"
+
+            logger.error(err)
+            logger.error(hint)
+            logger.error(link)
+            throw new InvalidUserDataException(err + "\n" + hint + "\n" + link)
+        }
+
+    }
+
+    // Determine the effective dependency files.
+    // If these change checkClasspath has work to do.
+    // Otherwise it can be skipped.
+    @InputFiles
+    List<File> getInputFiles() {
+
+        ClasspathHellPluginExtension ext = project.classpathHell
+        def configurations = getConfigurations(ext)
+        def resolvableConfigurations = configurations.findAll {
+            canBeResolved(it)
+        }
+
+        def inputFiles = []
+        resolvableConfigurations.each { Configuration conf ->
+            conf.getResolvedConfiguration().getResolvedArtifacts().each {
+                ResolvedArtifact resolvedArtifact ->
+                    if (ext.includeArtifact.call(resolvedArtifact)) {
+                        inputFiles += resolvedArtifact.file
+                    }
+            }
+        }
+
+        return inputFiles
+    }
+
+    @OutputFiles
+    List<File> getOutputFiles() {
+        return getInputFiles();
+    }
+
 }
