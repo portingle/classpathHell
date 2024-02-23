@@ -15,6 +15,7 @@ import java.nio.file.Paths
 
 import static org.gradle.testkit.runner.TaskOutcome.FAILED
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
+import static org.gradle.testkit.runner.TaskOutcome.UP_TO_DATE
 import static org.junit.Assert.*
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -348,5 +349,113 @@ class ClasspathHellPluginTests {
         assertTrue(result.getOutput().contains('excluding artifact <org.hamcrest:hamcrest-all:1.3>'))
         assertTrue(result.getOutput().contains('excluding resource <org/hamcrest/BaseMatcher.class>'))
         assertTrue(result.getOutput().contains('OVERRIDE includeArtifact CHECK OF'))
+    }
+
+    /**
+     * Tests the usage of the configured configurations as in- and outputs of the task.
+     * Unchanged dependencies producing no error should result in a skipped / up-to-date task.
+     */
+    @Test
+    void testTaskIsSkippedIfDependenciesDoNotChange() {
+        writeBuildFile("1.3", false)
+
+        GradleRunner runner = GradleRunner.create()
+                .forwardOutput()
+                .withProjectDir(testProjectDir.getRoot())
+                .withArguments("--info", 'checkClasspath')
+                .withPluginClasspath(pluginClasspath)
+
+        BuildResult result = runner.build()
+        def output = result.getOutput()
+        assertEquals("First run should result in SUCCESS", SUCCESS, result.task(":checkClasspath").getOutcome())
+
+        // second run: Task should be skipped since dependencies did not change:
+        result = runner.build()
+        output = result.getOutput()
+        assertEquals("Second run should result in UP_TO_DATE", UP_TO_DATE, result.task(":checkClasspath").getOutcome())
+
+    }
+
+    /**
+     * Tests the usage of the configured configurations as in- and outputs of the task.
+     * Changed dependencies should result in a second complete check.
+     */
+    @Test
+    void testTaskIsNotSkippedIfDependenciesChange() {
+        writeBuildFile("1.1", false)
+
+        GradleRunner runner = GradleRunner.create()
+                .forwardOutput()
+                .withProjectDir(testProjectDir.getRoot())
+                .withArguments("--info", 'checkClasspath')
+                .withPluginClasspath(pluginClasspath)
+
+        BuildResult result = runner.build()
+        assertEquals("First run should result in SUCCESS", SUCCESS, result.task(":checkClasspath").getOutcome())
+
+        // Change dependencies for second run (upgrade hamcrest dependency)
+        writeBuildFile("1.3", false)
+
+        // second run: Task should be skipped since dependencies did not change:
+        result = runner.build()
+        assertEquals("Second run should result in SUCCESS", SUCCESS, result.task(":checkClasspath").getOutcome())
+    }
+
+    /**
+     * Tests the usage of the configured configurations as in- and outputs of the task.
+     * If the previous run encountered duplicates the task should not be skipped, even if
+     * nothing changed.
+     */
+    @Test
+    void testTaskIsNotSkippedIfDuplicatesExist() {
+        writeBuildFile("1.3", true)
+
+        GradleRunner runner = GradleRunner.create()
+                .forwardOutput()
+                .withProjectDir(testProjectDir.getRoot())
+                .withArguments("--info", 'checkClasspath')
+                .withPluginClasspath(pluginClasspath)
+
+        BuildResult result = runner.buildAndFail()
+        assertEquals("First run should result in FAILED", FAILED, result.task(":checkClasspath").getOutcome())
+
+        // second run: task should not be skipped since the last run failed!:
+        result = runner.buildAndFail()
+        assertEquals("Second run should result in FAILED", FAILED, result.task(":checkClasspath").getOutcome())
+
+    }
+
+    /**
+     * Overwrites the existing build file with a file including a single hamcrest-all dependency, using
+     * the provided version from the parameter.
+     *
+     * @param hamcrestVersion the version of hamcrest-all to write to the build file.
+     */
+    private void writeBuildFile(String hamcrestVersion, boolean includeHamcrestCore) {
+        buildFile.withWriter { writer ->
+            writer << """
+            plugins {
+                id 'com.portingle.classpathHell'
+            }
+            apply plugin: 'java'
+
+            repositories {
+                mavenCentral()
+            }
+            dependencies {
+                implementation group: 'org.hamcrest', name: 'hamcrest-all', version: '$hamcrestVersion'
+                ${if (includeHamcrestCore) {
+                    "                implementation group: 'org.hamcrest', name: 'hamcrest-core', version: '$hamcrestVersion'"
+                }}
+
+            }
+            
+            classpathHell {
+                trace = true
+                configurationsToScan = [ configurations.compileClasspath ]
+            }
+   
+            """
+        }
     }
 }
