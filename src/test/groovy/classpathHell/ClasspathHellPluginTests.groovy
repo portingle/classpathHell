@@ -365,13 +365,16 @@ class ClasspathHellPluginTests {
                 .withArguments("--info", 'checkClasspath')
                 .withPluginClasspath(pluginClasspath)
 
+        println("===================================== FIRST RUN")
         BuildResult result = runner.build()
-        def output = result.getOutput()
+        assertTrue(result.getOutput().contains('classpathHell: checking resource'))
         assertEquals("First run should result in SUCCESS", SUCCESS, result.task(":checkClasspath").getOutcome())
 
         // second run: Task should be skipped since dependencies did not change:
+
+        println("===================================== SECOND RUN")
         result = runner.build()
-        output = result.getOutput()
+        assertFalse(result.getOutput().contains('classpathHell: checking resource'))
         assertEquals("Second run should result in UP_TO_DATE", UP_TO_DATE, result.task(":checkClasspath").getOutcome())
 
     }
@@ -390,14 +393,18 @@ class ClasspathHellPluginTests {
                 .withArguments("--info", 'checkClasspath')
                 .withPluginClasspath(pluginClasspath)
 
+        println("===================================== FIRST RUN")
         BuildResult result = runner.build()
+        assertTrue(result.getOutput().contains('classpathHell: checking resource'))
         assertEquals("First run should result in SUCCESS", SUCCESS, result.task(":checkClasspath").getOutcome())
 
         // Change dependencies for second run (upgrade hamcrest dependency)
         writeBuildFile("1.3", false)
 
         // second run: Task should be skipped since dependencies did not change:
+        println("===================================== SECOND RUN")
         result = runner.build()
+        assertTrue(result.getOutput().contains('classpathHell: checking resource'))
         assertEquals("Second run should result in SUCCESS", SUCCESS, result.task(":checkClasspath").getOutcome())
     }
 
@@ -416,11 +423,15 @@ class ClasspathHellPluginTests {
                 .withArguments("--info", 'checkClasspath')
                 .withPluginClasspath(pluginClasspath)
 
+        println("===================================== FIRST RUN")
         BuildResult result = runner.buildAndFail()
+        assertTrue(result.getOutput().contains('classpathHell: checking resource'))
         assertEquals("First run should result in FAILED", FAILED, result.task(":checkClasspath").getOutcome())
 
         // second run: task should not be skipped since the last run failed!:
+        println("===================================== SECOND RUN")
         result = runner.buildAndFail()
+        assertTrue(result.getOutput().contains('classpathHell: checking resource'))
         assertEquals("Second run should result in FAILED", FAILED, result.task(":checkClasspath").getOutcome())
 
     }
