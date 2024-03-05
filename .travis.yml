@@ -8,7 +8,7 @@ cache:
     - $HOME/.gradle/wrapper/
 
 jdk:
-  - oraclejdk15
+  - oraclejdk20
   
 dist: precise
 
