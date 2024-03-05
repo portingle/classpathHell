@@ -1,5 +1,10 @@
 # RELEASE NOTES
 
+- 1.10
+
+  - Uses files from configured configurations as inputs in order to skip execution if nothing changed.
+
+
 - 1.9
 
   - Changed the log level of _logger.warn("classpathHell: trace=" + doTrace)_ to info so it doesn't clutter the console.

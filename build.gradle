@@ -1,7 +1,9 @@
 // RELEASNG ...
 // DO IT IN WINDOWS
 // UPDATE build.gradle: version '1.9'
+// SETUP:   plug gnupg contents into C:/Users/johnl/AppData/Roaming/gnupg
 // SETUP:   place gradle.properties in c:\users\johnl\gradlerelease\
+// SETUP:   gradle.properties refers to the gnupg dir so adjust accordingly
 // RELEASE: .\gradlew -g c:\users\johnl\gradlerelease publishPlugins [--validate-only]
 // VERIFY:  https://plugins.gradle.org/plugin/com.portingle.classpath-hell
 
@@ -20,7 +22,7 @@ plugins {
 
 group 'com.portingle'
 archivesBaseName = "classpath-hell"
-version '1.9'
+version '1.10'
 
 repositories {
     mavenCentral()
@@ -32,7 +34,7 @@ dependencies {
 
     testImplementation(gradleTestKit())
 
-    testImplementation group: 'junit', name: 'junit', version: '4.11'
+    testImplementation group: 'junit', name: 'junit', version: '4.13.1'
 }
 
 
@@ -114,7 +116,7 @@ task runDemoFail(type: Exec) {
 }
 
 test.dependsOn(['createPluginClasspath'])
-test.finalizedBy(['runDemoPass','runDemoFail'])
+build.finalizedBy(['runDemoPass','runDemoFail'])
 
 
 publishing {
@@ -158,8 +160,8 @@ publishing {
     }
 }
 
-sourceCompatibility = JavaVersion.VERSION_1_8
-targetCompatibility = JavaVersion.VERSION_1_8
+sourceCompatibility = JavaVersion.VERSION_15
+targetCompatibility = JavaVersion.VERSION_15
 
 
 gradlePlugin {
